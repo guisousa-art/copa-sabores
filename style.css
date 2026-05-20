@@ -15,7 +15,10 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-color);
+  background-image: url('./assets/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: var(--text-color);
   overflow: hidden; /* Hide scrollbars for the 3D globe full screen effect */
 }

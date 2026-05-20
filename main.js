@@ -13,7 +13,7 @@ const world = Globe()
   (document.getElementById('globeViz'))
   .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
   .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-  .backgroundImageUrl('./assets/background.png')
+  .backgroundColor('rgba(0, 0, 0, 0)')
   .polygonAltitude(0.01)
   .polygonCapColor(() => 'rgba(200, 0, 0, 0.2)')
   .polygonSideColor(() => 'rgba(0, 100, 0, 0.15)')
@@ -86,8 +86,64 @@ fetch('./ne_110m_admin_0_countries.geojson')
 
     // Setup Auto-rotation
     world.controls().autoRotate = true;
-    world.controls().autoRotateSpeed = 0.5;
-    world.controls().enableZoom = true;
+    world.controls().autoRotateSpeed = 0.25; // Slow down by 50%
+    world.controls().enableZoom = false;   // Disable default scroll zoom
+    world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
+
+    // Custom Globe Controls (Placed inside .then to ensure controls are initialized)
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const rotationSlider = document.getElementById('rotationSlider');
+
+    // Handle Rotation via Slider
+    rotationSlider.addEventListener('input', (e) => {
+      // Disable autoRotate upon manual interaction
+      if (world.controls().autoRotate) {
+        world.controls().autoRotate = false;
+      }
+      
+      const currentPOV = world.pointOfView();
+      world.pointOfView({
+        lat: currentPOV.lat,
+        lng: Number(e.target.value),
+        altitude: currentPOV.altitude
+      }, 0); // Instant 0ms transition for smooth dragging
+    });
+
+    // Handle Zoom In
+    zoomInBtn.addEventListener('click', () => {
+      const currentPOV = world.pointOfView();
+      // Prevent clipping by limiting minimum altitude to 1.15
+      const newAltitude = Math.max(1.15, currentPOV.altitude - 0.4);
+      world.pointOfView({
+        lat: currentPOV.lat,
+        lng: currentPOV.lng,
+        altitude: newAltitude
+      }, 400); // Fluid 400ms transition
+    });
+
+    // Handle Zoom Out
+    zoomOutBtn.addEventListener('click', () => {
+      const currentPOV = world.pointOfView();
+      // Limit maximum altitude to 4.0
+      const newAltitude = Math.min(4.0, currentPOV.altitude + 0.4);
+      world.pointOfView({
+        lat: currentPOV.lat,
+        lng: currentPOV.lng,
+        altitude: newAltitude
+      }, 400); // Fluid 400ms transition
+    });
+
+    // Sync Slider Position with Auto-Rotation
+    world.controls().addEventListener('change', () => {
+      if (world.controls().autoRotate) {
+        const pov = world.pointOfView();
+        // Normalize longitude to [0, 360)
+        let lng = pov.lng % 360;
+        if (lng < 0) lng += 360;
+        rotationSlider.value = Math.round(lng);
+      }
+    });
   });
 
 // Modal Logic
