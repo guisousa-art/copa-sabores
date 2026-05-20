@@ -11,9 +11,9 @@ const recipeImageEl = document.getElementById('recipeImage');
 // Setup Globe
 const world = Globe()
   (document.getElementById('globeViz'))
-  .globeImageUrl('//unpkg.com/earth-globe/example/img/earth-blue-marble.jpg')
+  .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
   .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-  .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+  .backgroundImageUrl('./assets/background.png')
   .polygonAltitude(0.01)
   .polygonCapColor(() => 'rgba(200, 0, 0, 0.2)')
   .polygonSideColor(() => 'rgba(0, 100, 0, 0.15)')
