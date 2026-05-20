@@ -77,8 +77,8 @@ const world = Globe()
     }
   });
 
-// Set Solid Ocean Color (#0d3026) on the globe base sphere
-world.globeMaterial().color.set('#0d3026');
+// Set Solid Ocean Color (#233c91) on the globe base sphere
+world.globeMaterial().color.set('#233c91');
 world.globeMaterial().shininess = 15; // Muted glossy reflection
 
 // Portuguese Translation Helper
