@@ -1,7 +1,7 @@
 :root {
   --bg-color: #050505;
   --text-color: #ffffff;
-  --accent-color: #00ffcc;
+  --accent-color: #ffc800;
   --glass-bg: rgba(20, 20, 20, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -52,7 +52,7 @@ h1 {
   font-weight: 800;
   letter-spacing: 2px;
   margin-bottom: 10px;
-  background: linear-gradient(90deg, #00ffcc, #00bfff);
+  background: linear-gradient(90deg, #ffc800, #be1e1e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

@@ -1,5 +1,21 @@
 import { recipesData } from './data.js';
 
+// Participating Teams in the World Cup
+const worldCupTeams = [
+  "Canada", "United States of America", "Mexico",
+  "Australia", "Saudi Arabia", "Qatar", "South Korea", "Iran", "Iraq", "Japan", "Jordan", "Uzbekistan",
+  "South Africa", "Algeria", "Ivory Coast", "Egypt", "Ghana", "Morocco", "Democratic Republic of the Congo", "Senegal", "Tunisia",
+  "Argentina", "Brazil", "Colombia", "Ecuador", "Paraguay", "Uruguay",
+  "New Zealand",
+  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "United Kingdom",
+  "Haiti", "Panama"
+];
+
+const isParticipating = (d) => {
+  if (!d || !d.properties) return false;
+  return worldCupTeams.includes(d.properties.ADMIN);
+};
+
 // Elements
 const modal = document.getElementById('recipeModal');
 const closeModalBtn = document.getElementById('closeModal');
@@ -11,43 +27,59 @@ const recipeImageEl = document.getElementById('recipeImage');
 // Setup Globe
 const world = Globe()
   (document.getElementById('globeViz'))
-  .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-  .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
   .backgroundColor('rgba(0, 0, 0, 0)')
-  .polygonAltitude(0.01)
-  .polygonCapColor(() => 'rgba(200, 0, 0, 0.2)')
-  .polygonSideColor(() => 'rgba(0, 100, 0, 0.15)')
-  .polygonStrokeColor(() => '#111')
+  .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
+  .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)') // participating vs muted red for other lands
+  .polygonSideColor(d => isParticipating(d) ? 'rgba(255, 200, 0, 0.3)' : 'rgba(0, 0, 0, 0)')
+  .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)') // yellow borders (#ffc800)
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
+    const participating = worldCupTeams.includes(d.ADMIN);
     return `
-    <div style="background: rgba(0, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 4px; font-family: 'Outfit', sans-serif;">
-      <b>${ptName}</b>
+    <div style="background: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 6px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}">
+      <b>${ptName}</b>${participating ? ' <span style="color: #ffc800; font-size: 0.85rem; margin-left: 4px;">★</span>' : ''}
     </div>
   `})
   .onPolygonHover(hoverD => {
-    world
-      .polygonAltitude(d => d === hoverD ? 0.08 : 0.01)
-      .polygonCapColor(d => d === hoverD ? 'rgba(0, 255, 204, 0.6)' : 'rgba(255, 255, 255, 0.1)');
-  })
-  .onPolygonClick(({ properties: d }) => {
-    const countryName = d.ADMIN;
-    const ptName = getCountryNamePT(d);
-
-    // Check if we have a recipe for this country
-    const recipe = recipesData[countryName];
-
-    if (recipe) {
-      openModal(ptName, recipe);
+    const container = document.getElementById('globeViz');
+    if (hoverD && isParticipating(hoverD)) {
+      container.style.cursor = 'pointer';
+      world
+        .polygonAltitude(d => d === hoverD ? 0.08 : (isParticipating(d) ? 0.01 : 0.002))
+        .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)'))
+        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)'));
     } else {
-      // Fallback if no recipe found
-      openModal(ptName, {
-        dish: "Iguarias Locais",
-        description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
-        image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
-      });
+      container.style.cursor = 'default';
+      world
+        .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
+        .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)')
+        .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)');
+    }
+  })
+  .onPolygonClick(d => {
+    if (d && isParticipating(d)) {
+      const countryName = d.properties.ADMIN;
+      const ptName = getCountryNamePT(d.properties);
+
+      // Check if we have a recipe for this country
+      const recipe = recipesData[countryName];
+
+      if (recipe) {
+        openModal(ptName, recipe);
+      } else {
+        // Fallback if no recipe found
+        openModal(ptName, {
+          dish: "Iguarias Locais",
+          description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
+          image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
+        });
+      }
     }
   });
+
+// Set Solid Ocean Color (#e61928) on the globe base sphere
+world.globeMaterial().color.set('#e61928');
+world.globeMaterial().shininess = 15; // Muted glossy reflection
 
 // Portuguese Translation Helper
 const regionNamesPt = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
@@ -71,18 +103,8 @@ function getCountryNamePT(d) {
 fetch('./ne_110m_admin_0_countries.geojson')
   .then(res => res.json())
   .then(countries => {
-    const worldCupTeams = [
-      "Canada", "United States of America", "Mexico",
-      "Australia", "Saudi Arabia", "Qatar", "South Korea", "Iran", "Iraq", "Japan", "Jordan", "Uzbekistan",
-      "South Africa", "Algeria", "Ivory Coast", "Egypt", "Ghana", "Morocco", "Democratic Republic of the Congo", "Senegal", "Tunisia",
-      "Argentina", "Brazil", "Colombia", "Ecuador", "Paraguay", "Uruguay",
-      "New Zealand",
-      "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "United Kingdom",
-      "Haiti", "Panama"
-    ];
-
-    const filteredFeatures = countries.features.filter(f => worldCupTeams.includes(f.properties.ADMIN));
-    world.polygonsData(filteredFeatures);
+    // Render all countries so outlines cover the entire globe
+    world.polygonsData(countries.features);
 
     // Setup Auto-rotation
     world.controls().autoRotate = true;
