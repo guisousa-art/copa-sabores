@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copa dos Sabores | Receitas Nacionais</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Use Globe.gl via unpkg -->
+  <script src="//unpkg.com/globe.gl"></script>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-content">
+      <h1>Copa dos Sabores</h1>
+      <p>Descubra a rica herança culinária das nações da Copa.<br>Clique em um país para explorar sua receita
+        característica.</p>
+    </div>
+  </header>
+
+  <div id="globeViz"></div>
+
+  <!-- Glassmorphic Popup Modal -->
+  <div id="recipeModal" class="modal hidden">
+    <div class="modal-content glass-effect">
+      <button id="closeModal" class="close-btn">&times;</button>
+      <div class="recipe-image-container">
+        <img id="recipeImage" src="" alt="Recipe Image">
+      </div>
+      <div class="recipe-details">
+        <h2 id="countryName">Nome do País</h2>
+        <h3 id="recipeDish">Nome do Prato</h3>
+        <p id="recipeDesc">A descrição aparecerá aqui.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+
+</html>
