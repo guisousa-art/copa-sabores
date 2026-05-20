@@ -11,7 +11,7 @@ const recipeImageEl = document.getElementById('recipeImage');
 // Setup Globe
 const world = Globe()
   (document.getElementById('globeViz'))
-  .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+  .globeImageUrl('//unpkg.com/earth-globe/example/img/earth-blue-marble.jpg')
   .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
   .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
   .polygonAltitude(0.01)
@@ -55,7 +55,7 @@ function getCountryNamePT(d) {
   if (d.ISO_A2 && d.ISO_A2 !== '-99') {
     try {
       return regionNamesPt.of(d.ISO_A2);
-    } catch(e) {}
+    } catch (e) { }
   }
   const fallbacks = {
     "France": "França",
