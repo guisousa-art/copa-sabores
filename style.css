@@ -20,7 +20,8 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   color: var(--text-color);
-  overflow: hidden; /* Hide scrollbars for the 3D globe full screen effect */
+  overflow: hidden;
+  /* Hide scrollbars for the 3D globe full screen effect */
 }
 
 header {
@@ -31,7 +32,8 @@ header {
   padding: 40px 20px;
   z-index: 10;
   text-align: center;
-  pointer-events: none; /* Let clicks pass through to the globe */
+  pointer-events: none;
+  /* Let clicks pass through to the globe */
 }
 
 .header-content {
@@ -42,7 +44,8 @@ header {
   padding: 0;
   border: none;
   box-shadow: none;
-  pointer-events: auto; /* Re-enable for the header text */
+  pointer-events: auto;
+  /* Re-enable for the header text */
   animation: slideDown 1s ease-out forwards;
 }
 
@@ -54,7 +57,8 @@ h1 {
   background: none;
   -webkit-background-clip: initial;
   -webkit-text-fill-color: initial;
-  color: #ffc800; /* Solid yellow of the outline */
+  color: #ffc800;
+  /* Solid yellow of the outline */
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -70,7 +74,8 @@ p {
   width: 100vw;
   height: 100vh;
   cursor: grab;
-  touch-action: none; /* Lock touch scrolling on the globe to prevent buggy embedding behaviors */
+  touch-action: none;
+  /* Lock touch scrolling on the globe to prevent buggy embedding behaviors */
 }
 
 #globeViz:active {
@@ -88,7 +93,8 @@ p {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.5); /* Dimming background */
+  background: rgba(0, 0, 0, 0.5);
+  /* Dimming background */
   backdrop-filter: blur(4px);
   opacity: 1;
   transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -184,6 +190,7 @@ p {
     transform: translateY(-50px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -293,6 +300,7 @@ p {
     transform: translate(-50%, 50px);
     opacity: 0;
   }
+
   to {
     transform: translate(-50%, 0);
     opacity: 1;
@@ -306,15 +314,19 @@ p {
   h1 {
     font-size: 2.2rem;
   }
+
   .header-content {
     padding: 0;
   }
+
   p {
     font-size: 0.95rem;
   }
+
   .recipe-image-container {
     height: 200px;
   }
+
   .recipe-details h3 {
     font-size: 1.6rem;
   }
@@ -325,20 +337,23 @@ p {
   header {
     padding: 15px 10px;
   }
+
   .header-content {
     padding: 0;
     border-radius: 0;
   }
+
   h1 {
     font-size: 1.5rem;
     letter-spacing: 1px;
     margin-bottom: 4px;
   }
+
   p {
     font-size: 0.8rem;
     line-height: 1.3;
   }
-  
+
   /* Globe Controls Panel */
   .globe-controls {
     bottom: 20px;
@@ -346,15 +361,18 @@ p {
     gap: 12px;
     width: 92%;
   }
+
   .control-btn {
     width: 36px;
     height: 36px;
     font-size: 1.2rem;
   }
+
   #rotationSlider::-webkit-slider-thumb {
     width: 16px;
     height: 16px;
   }
+
   #rotationSlider::-moz-range-thumb {
     width: 16px;
     height: 16px;
@@ -365,32 +383,39 @@ p {
     align-items: center;
     padding: 15px;
   }
+
   .modal-content.glass-effect {
     max-height: 85vh;
     border-radius: 20px;
     display: flex;
     flex-direction: column;
   }
+
   .recipe-image-container {
     height: 150px;
     flex-shrink: 0;
   }
+
   .recipe-details {
     padding: 18px 20px;
     overflow-y: auto;
     max-height: calc(85vh - 150px);
   }
+
   .recipe-details h2 {
     font-size: 0.85rem;
   }
+
   .recipe-details h3 {
     font-size: 1.35rem;
     margin-bottom: 8px;
   }
+
   .recipe-details p {
     font-size: 0.85rem;
     line-height: 1.45;
   }
+
   .close-btn {
     top: 8px;
     right: 12px;
@@ -401,24 +426,24 @@ p {
 /* Desktop layout: Left-aligned overlay title, vertically aligned to the top, solid yellow title, no background box */
 @media (min-width: 769px) {
   header {
-    top: 40px;
-    left: 60px;
+    top: 20%;
+    left: 5%;
     width: auto;
     max-width: 460px;
     text-align: left;
     padding: 0;
   }
-  
+
   .header-content {
     animation: slideRight 1s ease-out forwards;
   }
-  
+
   h1 {
     font-size: 3.5rem;
     line-height: 1.1;
     margin-bottom: 15px;
   }
-  
+
   p {
     font-size: 1.15rem;
     line-height: 1.6;
@@ -431,9 +456,9 @@ p {
     transform: translateX(-50px);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
   }
 }
-
