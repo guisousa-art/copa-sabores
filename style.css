@@ -516,7 +516,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: slideUp 0.8s ease-out forwards;
+  animation: searchSlideUp 0.8s ease-out forwards;
   pointer-events: auto; /* Ensure inputs and items can be clicked */
 }
 
@@ -749,6 +749,17 @@ p {
   from {
     opacity: 0;
     transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes searchSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
