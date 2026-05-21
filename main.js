@@ -42,7 +42,7 @@ const world = Globe()
   .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
   .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)') // participating vs muted red for other lands
   .polygonSideColor(d => isParticipating(d) ? 'rgba(255, 200, 0, 0.3)' : 'rgba(0, 0, 0, 0)')
-  .polygonStrokeColor(d => isParticipating(d) ? '#fff' : '#ffc80040') // yellow borders (#ffc800)
+  .polygonStrokeColor(d => isParticipating(d) ? '#28cdd2' : '#008c9b40') // yellow borders (#ffc800)
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
@@ -71,13 +71,13 @@ const world = Globe()
       world
         .polygonAltitude(d => d === hoverD ? 0.08 : (isParticipating(d) ? 0.01 : 0.002))
         .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)'))
-        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#ffc800' : '#ffc80040'));
+        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#28cdd2' : '#008c9b40'));
     } else {
       container.style.cursor = 'default';
       world
         .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
         .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)')
-        .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : '#ffc80040');
+        .polygonStrokeColor(d => isParticipating(d) ? '#28cdd2' : '#008c9b40');
     }
   })
   .onPolygonClick(d => {
