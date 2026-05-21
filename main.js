@@ -733,13 +733,6 @@ const shareTW = document.getElementById('shareTW');
 const shareIG = document.getElementById('shareIG');
 const shareCopy = document.getElementById('shareCopy');
 
-if (shareBtn && shareMenu) {
-  shareBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    shareMenu.classList.toggle('hidden');
-  });
-}
-
 if (shareWA) {
   shareWA.addEventListener('click', () => {
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(getShareMessage())}`;
@@ -785,11 +778,15 @@ if (shareCopy) {
   });
 }
 
-// Global outside click listener to close sharing dropdown
+// Robust global click listener to toggle and close sharing dropdown
 window.addEventListener('click', (e) => {
-  if (shareMenu && !shareMenu.classList.contains('hidden')) {
-    if (shareBtn && !shareBtn.contains(e.target) && !shareMenu.contains(e.target)) {
-      shareMenu.classList.add('hidden');
-    }
+  if (!shareMenu) return;
+  
+  if (shareBtn && shareBtn.contains(e.target)) {
+    // Clicked the share button or its children (SVG, Span, etc.)
+    shareMenu.classList.toggle('hidden');
+  } else if (!shareMenu.contains(e.target)) {
+    // Clicked outside both the share button and the menu -> close it
+    shareMenu.classList.add('hidden');
   }
 });
