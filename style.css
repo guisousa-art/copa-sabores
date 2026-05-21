@@ -498,3 +498,283 @@ p {
     opacity: 1;
   }
 }
+
+/* ==========================================
+   GLASSMORPHIC SEARCH CONTAINER & LIST STYLES
+   ========================================== */
+
+.search-container {
+  margin-top: 25px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(40, 205, 210, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(40, 205, 210, 0.1);
+  padding: 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideUp 0.8s ease-out forwards;
+  pointer-events: auto; /* Ensure inputs and items can be clicked */
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#countrySearch {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+#countrySearch::placeholder {
+  color: #666666;
+  font-style: normal;
+  font-weight: 300;
+}
+
+#countrySearch:focus {
+  border-color: #28cdd2;
+  box-shadow: 0 0 10px rgba(40, 205, 210, 0.4);
+  background: rgba(5, 5, 5, 0.95);
+}
+
+/* Country List UL */
+.country-list {
+  list-style: none;
+  max-height: 230px; /* Capped scroll height for premium feel */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-right: 5px;
+}
+
+/* Custom Scrollbar for list */
+.country-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.country-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.country-list::-webkit-scrollbar-thumb {
+  background: rgba(40, 205, 210, 0.3);
+  border-radius: 10px;
+}
+
+.country-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(40, 205, 210, 0.6);
+}
+
+/* Country List Item */
+.country-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 8px;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.country-item:last-child {
+  border-bottom: none;
+}
+
+.country-item:hover {
+  background: rgba(40, 205, 210, 0.08);
+  padding-left: 12px; /* Smooth micro-movement */
+}
+
+/* Flags and placeholders inside list */
+.search-flag {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.search-flag-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* Country Name styling */
+.search-country-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.country-item:hover .search-country-name {
+  color: #28cdd2;
+}
+
+/* ==========================================
+   DYNAMIC INGREDIENTS & STEPS DETAIL STYLES
+   ========================================== */
+
+.recipe-section {
+  margin-top: 25px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.recipe-section.hidden {
+  display: none !important;
+}
+
+.recipe-section h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #28cdd2; /* Vibrant green/teal */
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Ingredients Grid Layout */
+.ingredients-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  list-style: none;
+  margin-bottom: 5px;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.ingredient-item:hover {
+  background: rgba(40, 205, 210, 0.05);
+}
+
+.ingredient-bullet {
+  color: #28cdd2;
+  font-weight: bold;
+}
+
+.ingredient-name {
+  color: #dddddd;
+  font-weight: 400;
+}
+
+.ingredient-qty {
+  color: #888888;
+  font-size: 0.8rem;
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Instructions Steps list */
+.instructions-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.instruction-step {
+  display: flex;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #dddddd;
+  transition: all 0.2s ease;
+}
+
+.instruction-step:hover {
+  border-color: rgba(40, 205, 210, 0.25);
+  background: rgba(40, 205, 210, 0.02);
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #28cdd2;
+  color: #000000;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(40, 205, 210, 0.4);
+}
+
+.step-text {
+  flex-grow: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================
+   RESPONSIVE OVERRIDES
+   ========================================== */
+
+@media (max-width: 768px) {
+  .search-container {
+    max-width: 92%;
+    margin: 15px auto 0 auto;
+    padding: 12px;
+    border-radius: 16px;
+  }
+  
+  .country-list {
+    max-height: 110px; /* Shortened on mobile to prevent blocking */
+  }
+}
+
+@media (max-width: 480px) {
+  .ingredients-grid {
+    grid-template-columns: 1fr; /* Single column ingredients on phone */
+  }
+}

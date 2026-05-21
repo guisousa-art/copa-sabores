@@ -7,7 +7,7 @@ const worldCupTeams = [
   "South Africa", "Algeria", "Ivory Coast", "Egypt", "Ghana", "Morocco", "Democratic Republic of the Congo", "Senegal", "Tunisia",
   "Argentina", "Brazil", "Colombia", "Ecuador", "Paraguay", "Uruguay",
   "New Zealand",
-  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "United Kingdom",
+  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "United Kingdom", "Italy",
   "Haiti", "Panama"
 ];
 
@@ -15,6 +15,7 @@ const worldCupTeams = [
 const worldCupTitles = {
   "Brazil": 5,
   "Germany": 4,
+  "Italy": 4,
   "Argentina": 3,
   "France": 2,
   "Uruguay": 2,
@@ -26,6 +27,143 @@ const isParticipating = (d) => {
   if (!d || !d.properties) return false;
   return worldCupTeams.includes(d.properties.ADMIN);
 };
+
+// ==========================================
+// GOOGLE SHEETS INTEGRATION CONFIGURATION
+// ==========================================
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1JRHo8rWdp09LPfgZujFPoyCxeRee8uKKqgl9jWMfgk0/export?format=csv';
+
+const sheetCountryMap = {
+  "Brasil": "Brazil",
+  "Argentina": "Argentina",
+  "México": "Mexico",
+  "Japão": "Japan",
+  "França": "France",
+  "Itália": "Italy",
+  "Alemanha": "Germany",
+  "Marrocos": "Morocco"
+};
+
+let fetchedRecipesData = {};
+
+// Bulletproof CSV Parser to handle comma-delimited fields, quotes, and newlines
+function parseCSV(csvText) {
+  const lines = [];
+  let currentLine = [];
+  let currentField = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    const nextChar = csvText[i + 1];
+    
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          currentField += '"';
+          i++; // Skip double quote
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        currentField += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        currentLine.push(currentField.trim());
+        currentField = '';
+      } else if (char === '\r' || char === '\n') {
+        currentLine.push(currentField.trim());
+        currentField = '';
+        if (currentLine.some(field => field !== '')) {
+          lines.push(currentLine);
+        }
+        currentLine = [];
+        if (char === '\r' && nextChar === '\n') {
+          i++; // Skip \n
+        }
+      } else {
+        currentField += char;
+      }
+    }
+  }
+  
+  if (currentField !== '' || currentLine.length > 0) {
+    currentLine.push(currentField.trim());
+    if (currentLine.some(field => field !== '')) {
+      lines.push(currentLine);
+    }
+  }
+  
+  return lines;
+}
+
+// Fetch recipes from Google Sheets with graceful fallback to local data
+function loadRecipesFromSheet() {
+  return fetch(SHEET_URL)
+    .then(res => {
+      if (!res.ok) throw new Error("Falha ao buscar planilha de receitas");
+      return res.text();
+    })
+    .then(csvText => {
+      const parsed = parseCSV(csvText);
+      if (parsed.length <= 1) throw new Error("Planilha vazia ou inválida");
+      
+      const recipes = { ...recipesData };
+      
+      for (let i = 1; i < parsed.length; i++) {
+        const row = parsed[i];
+        if (!row || row.length < 3) continue;
+        
+        const id = row[0];
+        const dishName = row[1];
+        const paisPt = row[2];
+        const customImage = row[3];
+        
+        // Parse up to 5 ingredients and quantities
+        const ingredients = [];
+        for (let j = 4; j < 14; j += 2) {
+          const ingName = row[j];
+          const ingQty = row[j+1];
+          if (ingName && ingName.trim() !== '') {
+            ingredients.push({
+              name: ingName.trim(),
+              quantity: ingQty ? ingQty.trim() : ''
+            });
+          }
+        }
+        
+        // Modo de preparo split by '|'
+        const prepSteps = row[14] ? row[14].split('|').map(s => s.trim()).filter(s => s !== '') : [];
+        
+        // Map country to English ADMIN name
+        const englishName = sheetCountryMap[paisPt] || id.split('-')[0];
+        
+        // Fallback Unsplash image from data.js local data
+        const localFallback = recipesData[englishName];
+        const fallbackImage = localFallback ? localFallback.image : "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop";
+        
+        recipes[englishName] = {
+          dish: dishName,
+          description: localFallback ? localFallback.description : `Uma deliciosa receita tradicional de ${paisPt} de dar água na boca, preparada para a Copa dos Sabores.`,
+          image: customImage && customImage.trim() !== '' ? customImage.trim() : fallbackImage,
+          ingredients: ingredients,
+          instructions: prepSteps
+        };
+      }
+      
+      fetchedRecipesData = recipes;
+      console.log("Recipes loaded successfully from Google Sheets:", fetchedRecipesData);
+      return recipes;
+    })
+    .catch(err => {
+      console.warn("Utilizando dados locais como fallback devido a erro na planilha:", err);
+      // Fallback
+      fetchedRecipesData = recipesData;
+    });
+}
 
 // Elements
 const modal = document.getElementById('recipeModal');
@@ -84,7 +222,7 @@ const world = Globe()
     if (d && isParticipating(d)) {
       const countryName = d.properties.ADMIN;
       const ptName = getCountryNamePT(d.properties);
-      const recipe = recipesData[countryName];
+      const recipe = fetchedRecipesData[countryName];
 
       // Calculate geographic center and bounding box area
       const { lat, lng, area } = getPolygonCenterAndArea(d);
@@ -198,12 +336,20 @@ function getPolygonCenterAndArea(feature) {
   };
 }
 
-// Load GeoJSON data for countries
-fetch('./ne_110m_admin_0_countries.geojson')
-  .then(res => res.json())
-  .then(countries => {
+// Start loading recipes from sheet immediately
+const recipesPromise = loadRecipesFromSheet();
+
+// Load GeoJSON data for countries and sheet recipes in parallel
+Promise.all([
+  fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
+  recipesPromise
+])
+  .then(([countries]) => {
     // Render all countries so outlines cover the entire globe
     world.polygonsData(countries.features);
+
+    // Initialize the glassmorphic search panel with country rows
+    initializeCountrySearch(countries.features);
 
     // Make default globe size 25% smaller on mobile (increase altitude to 3.3 to zoom out)
     const isMobile = window.innerWidth <= 480;
@@ -271,12 +417,124 @@ fetch('./ne_110m_admin_0_countries.geojson')
     });
   });
 
+// Setup glassmorphic floating search list and filter logic
+function initializeCountrySearch(features) {
+  const listEl = document.getElementById('countryList');
+  const searchInput = document.getElementById('countrySearch');
+  
+  const participatingFeatures = features
+    .filter(f => isParticipating(f))
+    .map(f => {
+      return {
+        feature: f,
+        namePT: getCountryNamePT(f.properties),
+        nameEN: f.properties.ADMIN,
+        isoCode: f.properties.ISO_A2
+      };
+    });
+  
+  // Sort alphabetically by Portuguese name
+  participatingFeatures.sort((a, b) => a.namePT.localeCompare(b.namePT, 'pt-BR'));
+  
+  // Populate UI items
+  function renderList(filteredFeatures) {
+    listEl.innerHTML = '';
+    
+    filteredFeatures.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'country-item';
+      
+      const flagUrl = item.isoCode && item.isoCode !== '-99'
+        ? `https://flagcdn.com/w80/${item.isoCode.toLowerCase()}.png`
+        : '';
+        
+      const flagHtml = flagUrl
+        ? `<img src="${flagUrl}" class="search-flag" alt="${item.namePT} flag">`
+        : `<div class="search-flag-placeholder"></div>`;
+        
+      li.innerHTML = `
+        ${flagHtml}
+        <span class="search-country-name">${item.namePT}</span>
+      `;
+      
+      // Click zooms to country and triggers details modal
+      li.addEventListener('click', () => {
+        const d = item.feature;
+        const countryName = d.properties.ADMIN;
+        const ptName = item.namePT;
+        const recipe = fetchedRecipesData[countryName];
+        
+        // Bounding box area specific zoom calculation
+        const { lat, lng, area } = getPolygonCenterAndArea(d);
+        
+        let zoomAltitude;
+        if (area < 15) {
+          zoomAltitude = 1.25;
+        } else if (area < 80) {
+          zoomAltitude = 1.5;
+        } else if (area < 400) {
+          zoomAltitude = 1.95;
+        } else {
+          zoomAltitude = 2.4;
+        }
+        
+        const isMobile = window.innerWidth <= 480;
+        if (isMobile) {
+          zoomAltitude += 0.45;
+        }
+        
+        if (world.controls().autoRotate) {
+          world.controls().autoRotate = false;
+        }
+        
+        world.pointOfView({ lat, lng, altitude: zoomAltitude }, 800);
+        
+        if (recipe) {
+          setTimeout(() => {
+            openModal(ptName, recipe, d.properties.ISO_A2, countryName);
+          }, 300);
+        } else {
+          setTimeout(() => {
+            openModal(ptName, {
+              dish: "Iguarias Locais",
+              description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
+              image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
+            }, d.properties.ISO_A2, countryName);
+          }, 300);
+        }
+      });
+      
+      listEl.appendChild(li);
+    });
+  }
+  
+  renderList(participatingFeatures);
+  
+  // Real-time search filter matching country names and dish titles
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    const filtered = participatingFeatures.filter(item => {
+      const normPT = item.namePT.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const normEN = item.nameEN.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      const recipe = fetchedRecipesData[item.nameEN];
+      const normDish = recipe && recipe.dish
+        ? recipe.dish.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        : "";
+      
+      return normPT.includes(query) || normEN.includes(query) || normDish.includes(query);
+    });
+    
+    renderList(filtered);
+  });
+}
+
 // Modal Logic
 function openModal(country, recipe, isoCode, englishName) {
   countryNameEl.textContent = country;
   recipeDishEl.textContent = recipe.dish;
-  recipeDescEl.textContent = recipe.description;
-  recipeImageEl.src = recipe.image;
+  recipeDescEl.textContent = recipe.description || "";
 
   // Render Flag CDN Squared flag icon
   const flagEl = document.getElementById('countryFlag');
@@ -299,6 +557,46 @@ function openModal(country, recipe, isoCode, englishName) {
     }
   }
 
+  // Populate dynamic sheet-fed ingredients and instructions
+  const ingredientsSection = document.getElementById('ingredientsSection');
+  const ingredientsList = document.getElementById('ingredientsList');
+  const instructionsSection = document.getElementById('instructionsSection');
+  const instructionsList = document.getElementById('instructionsList');
+
+  if (recipe.ingredients && recipe.ingredients.length > 0) {
+    ingredientsList.innerHTML = '';
+    recipe.ingredients.forEach(ing => {
+      const li = document.createElement('li');
+      li.className = 'ingredient-item';
+      li.innerHTML = `
+        <span class="ingredient-bullet">•</span>
+        <span class="ingredient-name">${ing.name}</span>
+        ${ing.quantity ? `<span class="ingredient-qty">${ing.quantity}</span>` : ''}
+      `;
+      ingredientsList.appendChild(li);
+    });
+    ingredientsSection.classList.remove('hidden');
+  } else {
+    ingredientsSection.classList.add('hidden');
+  }
+
+  if (recipe.instructions && recipe.instructions.length > 0) {
+    instructionsList.innerHTML = '';
+    recipe.instructions.forEach((step, idx) => {
+      const li = document.createElement('li');
+      li.className = 'instruction-step';
+      li.innerHTML = `
+        <span class="step-number">${idx + 1}</span>
+        <span class="step-text">${step}</span>
+      `;
+      instructionsList.appendChild(li);
+    });
+    instructionsSection.classList.remove('hidden');
+  } else {
+    instructionsSection.classList.add('hidden');
+  }
+
+  recipeImageEl.src = recipe.image;
   modal.classList.remove('hidden');
 }
 
@@ -307,11 +605,27 @@ function closeModal() {
   
   // Resume auto-rotation when the modal is closed
   world.controls().autoRotate = true;
+
+  // Reset camera vertical rotation (lat to 0) and altitude back to defaults
+  const currentPOV = world.pointOfView();
+  const isMobile = window.innerWidth <= 480;
+  world.pointOfView({
+    lat: 0,
+    lng: currentPOV.lng,
+    altitude: isMobile ? 3.3 : 2.5
+  }, 800); // smooth 800ms transition
 }
 
 closeModalBtn.addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => {
   if (e.target === modal) {
+    closeModal();
+  }
+});
+
+// Dismiss modal on standard Escape key press
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
     closeModal();
   }
 });

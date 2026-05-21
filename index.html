@@ -21,6 +21,16 @@
       <h1>Copa dos Sabores</h1>
       <p>Descubra a rica herança culinária das nações da Copa.<br>Clique em um país para explorar sua receita
         característica.</p>
+      
+      <!-- Glassmorphic Search Panel -->
+      <div class="search-container glass-effect">
+        <div class="search-input-wrapper">
+          <input type="text" id="countrySearch" placeholder="busque a receita que dá fome" autocomplete="off" aria-label="Busque países ou receitas">
+        </div>
+        <ul id="countryList" class="country-list">
+          <!-- Dynamically populated in main.js -->
+        </ul>
+      </div>
     </div>
   </header>
 
@@ -52,6 +62,22 @@
         <div id="countryTitles" class="country-titles-badges">🏆 0 títulos</div>
         <h3 id="recipeDish">Nome do Prato</h3>
         <p id="recipeDesc">A descrição aparecerá aqui.</p>
+        
+        <!-- Ingredients Section -->
+        <div id="ingredientsSection" class="recipe-section hidden">
+          <h4>Ingredientes</h4>
+          <ul id="ingredientsList" class="ingredients-grid">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+        
+        <!-- Instructions Section -->
+        <div id="instructionsSection" class="recipe-section hidden">
+          <h4>Modo de Preparo</h4>
+          <ol id="instructionsList" class="instructions-steps">
+            <!-- Dynamically populated -->
+          </ol>
+        </div>
       </div>
     </div>
   </div>
