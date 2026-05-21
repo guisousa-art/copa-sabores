@@ -459,6 +459,14 @@ function initializeCountrySearch(features) {
       
       // Click zooms to country and triggers details modal
       li.addEventListener('click', () => {
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer && searchContainer.classList.contains('is-open')) {
+          searchContainer.classList.remove('is-open');
+          searchInput.value = '';
+          searchInput.blur();
+          renderList(participatingFeatures);
+        }
+
         const d = item.feature;
         const countryName = d.properties.ADMIN;
         const ptName = item.namePT;
@@ -528,6 +536,32 @@ function initializeCountrySearch(features) {
     
     renderList(filtered);
   });
+
+  // Mobile full screen search overlay open/close logic
+  const searchContainer = document.querySelector('.search-container');
+  const closeSearchBtn = document.getElementById('closeSearch');
+  
+  searchInput.addEventListener('focus', () => {
+    if (window.innerWidth <= 768) {
+      searchContainer.classList.add('is-open');
+    }
+  });
+  
+  searchInput.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      searchContainer.classList.add('is-open');
+    }
+  });
+
+  if (closeSearchBtn) {
+    closeSearchBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent refocussing the search input
+      searchContainer.classList.remove('is-open');
+      searchInput.value = '';
+      searchInput.blur();
+      renderList(participatingFeatures);
+    });
+  }
 }
 
 // Modal Logic
@@ -623,10 +657,21 @@ modal.addEventListener('click', (e) => {
   }
 });
 
-// Dismiss modal on standard Escape key press
+// Dismiss modal or collapse search container on Escape key press
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-    closeModal();
+  if (e.key === 'Escape') {
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer && searchContainer.classList.contains('is-open')) {
+      searchContainer.classList.remove('is-open');
+      const searchInput = document.getElementById('countrySearch');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+        searchInput.dispatchEvent(new Event('input'));
+      }
+    } else if (!modal.classList.contains('hidden')) {
+      closeModal();
+    }
   }
 });
 
