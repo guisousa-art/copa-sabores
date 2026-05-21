@@ -42,7 +42,7 @@ const world = Globe()
   .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
   .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)') // participating vs muted red for other lands
   .polygonSideColor(d => isParticipating(d) ? 'rgba(255, 200, 0, 0.3)' : 'rgba(0, 0, 0, 0)')
-  .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)') // yellow borders (#ffc800)
+  .polygonStrokeColor(d => isParticipating(d) ? '#fff' : '#ffc80040') // yellow borders (#ffc800)
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
@@ -71,13 +71,13 @@ const world = Globe()
       world
         .polygonAltitude(d => d === hoverD ? 0.08 : (isParticipating(d) ? 0.01 : 0.002))
         .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)'))
-        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)'));
+        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#ffc800' : '#ffc80040'));
     } else {
       container.style.cursor = 'default';
       world
         .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
         .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)')
-        .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : 'rgba(255, 200, 0, 0.25)');
+        .polygonStrokeColor(d => isParticipating(d) ? '#ffc800' : '#ffc80040');
     }
   })
   .onPolygonClick(d => {
@@ -133,7 +133,7 @@ const world = Globe()
   });
 
 // Set Solid Ocean Color (#233c91) on the globe base sphere
-world.globeMaterial().color.set('#233c91');
+world.globeMaterial().color.set('#284650');
 world.globeMaterial().shininess = 15; // Muted glossy reflection
 
 // Portuguese Translation Helper
@@ -169,7 +169,7 @@ function getPolygonCenterAndArea(feature) {
       if (lat > maxLat) maxLat = lat;
       if (lng < minLng) minLng = lng;
       if (lng > maxLng) maxLng = lng;
-      
+
       sumLng += lng;
       sumLat += lat;
       totalPts++;
@@ -226,7 +226,7 @@ fetch('./ne_110m_admin_0_countries.geojson')
       if (world.controls().autoRotate) {
         world.controls().autoRotate = false;
       }
-      
+
       const currentPOV = world.pointOfView();
       world.pointOfView({
         lat: currentPOV.lat,
