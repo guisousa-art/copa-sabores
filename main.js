@@ -304,6 +304,9 @@ function openModal(country, recipe, isoCode, englishName) {
 
 function closeModal() {
   modal.classList.add('hidden');
+  
+  // Resume auto-rotation when the modal is closed
+  world.controls().autoRotate = true;
 }
 
 closeModalBtn.addEventListener('click', closeModal);
