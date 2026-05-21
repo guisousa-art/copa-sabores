@@ -398,3 +398,42 @@ p {
   }
 }
 
+/* Desktop layout: Left-aligned overlay title, vertically aligned to the top, solid yellow title, no background box */
+@media (min-width: 769px) {
+  header {
+    top: 40px;
+    left: 60px;
+    width: auto;
+    max-width: 460px;
+    text-align: left;
+    padding: 0;
+  }
+  
+  .header-content {
+    animation: slideRight 1s ease-out forwards;
+  }
+  
+  h1 {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    margin-bottom: 15px;
+  }
+  
+  p {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #ffffff;
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
