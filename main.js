@@ -11,6 +11,17 @@ const worldCupTeams = [
   "Haiti", "Panama"
 ];
 
+// Number of World Cup titles won by country
+const worldCupTitles = {
+  "Brazil": 5,
+  "Germany": 4,
+  "Argentina": 3,
+  "France": 2,
+  "Uruguay": 2,
+  "Spain": 1,
+  "United Kingdom": 1 // England
+};
+
 const isParticipating = (d) => {
   if (!d || !d.properties) return false;
   return worldCupTeams.includes(d.properties.ADMIN);
@@ -35,13 +46,22 @@ const world = Globe()
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
+    const titles = worldCupTitles[d.ADMIN] || 0;
     const flagHtml = d.ISO_A2 && d.ISO_A2 !== '-99'
-      ? `<img src="https://flagcdn.com/w80/${d.ISO_A2.toLowerCase()}.png" style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px; border: 1.5px solid #ffc800; margin-bottom: 6px; display: block;" alt="flag">`
+      ? `<img src="https://flagcdn.com/w80/${d.ISO_A2.toLowerCase()}.png" style="width: 22px; height: 22px; object-fit: cover; border-radius: 4px; border: 1px solid #ffc800; display: inline-block;" alt="flag">`
+      : '';
+    const titlesHtml = participating
+      ? `<div style="font-size: 0.8rem; margin-top: 4px; color: ${titles > 0 ? '#ffc800' : '#aaa'}; display: flex; align-items: center; gap: 4px;">
+          🏆 ${titles} ${titles === 1 ? 'título' : 'títulos'}
+         </div>`
       : '';
     return `
-    <div style="background: rgba(0, 0, 0, 0.85); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center;">
-      ${flagHtml}
-      <b style="font-size: 0.95rem;">${ptName}</b>${participating ? ' <span style="color: #ffc800; font-size: 0.85rem; margin-top: 2px;">★</span>' : ''}
+    <div style="background: rgba(0, 0, 0, 0.9); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        ${flagHtml}
+        <b style="font-size: 0.95rem; white-space: nowrap;">${ptName}</b>
+      </div>
+      ${titlesHtml}
     </div>
   `})
   .onPolygonHover(hoverD => {
@@ -98,7 +118,7 @@ const world = Globe()
       // Open the modal after a short delay so the user experiences the globe's visual pan transition
       if (recipe) {
         setTimeout(() => {
-          openModal(ptName, recipe, d.properties.ISO_A2);
+          openModal(ptName, recipe, d.properties.ISO_A2, countryName);
         }, 300);
       } else {
         setTimeout(() => {
@@ -106,7 +126,7 @@ const world = Globe()
             dish: "Iguarias Locais",
             description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
             image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
-          }, d.properties.ISO_A2);
+          }, d.properties.ISO_A2, countryName);
         }, 300);
       }
     }
@@ -252,7 +272,7 @@ fetch('./ne_110m_admin_0_countries.geojson')
   });
 
 // Modal Logic
-function openModal(country, recipe, isoCode) {
+function openModal(country, recipe, isoCode, englishName) {
   countryNameEl.textContent = country;
   recipeDishEl.textContent = recipe.dish;
   recipeDescEl.textContent = recipe.description;
@@ -265,6 +285,18 @@ function openModal(country, recipe, isoCode) {
     flagEl.style.display = 'block';
   } else {
     flagEl.style.display = 'none';
+  }
+
+  // Update World Cup titles count dynamically
+  const titlesEl = document.getElementById('countryTitles');
+  if (titlesEl) {
+    const titles = worldCupTitles[englishName] || 0;
+    titlesEl.innerHTML = `🏆 ${titles} ${titles === 1 ? 'título' : 'títulos'}`;
+    if (titles > 0) {
+      titlesEl.style.color = 'var(--accent-color)';
+    } else {
+      titlesEl.style.color = '#888';
+    }
   }
 
   modal.classList.remove('hidden');

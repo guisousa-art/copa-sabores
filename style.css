@@ -163,19 +163,32 @@ p {
   padding: 30px;
 }
 
-.flag-container {
-  margin-bottom: 12px;
+.country-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
 #countryFlag {
-  width: 45px;
-  height: 45px;
+  width: 32px;
+  height: 32px;
   object-fit: cover;
-  border-radius: 6px;
-  border: 2px solid var(--accent-color);
-  box-shadow: 0 4px 12px rgba(255, 200, 0, 0.25);
+  border-radius: 4px;
+  border: 1.5px solid var(--accent-color);
+  box-shadow: 0 2px 6px rgba(255, 200, 0, 0.2);
   background: rgba(255, 255, 255, 0.1);
-  display: block;
+  flex-shrink: 0;
+}
+
+.country-titles-badges {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .recipe-details h2 {
