@@ -28,11 +28,13 @@
 
   <!-- Globe Controls Panel -->
   <div class="globe-controls glass-effect">
-    <button id="zoomOut" class="control-btn" title="Zoom Out">−</button>
     <div class="slider-container">
       <input type="range" id="rotationSlider" min="0" max="360" value="0" aria-label="Rotate Globe">
     </div>
-    <button id="zoomIn" class="control-btn" title="Zoom In">+</button>
+    <div class="zoom-controls-row">
+      <button id="zoomOut" class="control-btn" title="Zoom Out">−</button>
+      <button id="zoomIn" class="control-btn" title="Zoom In">+</button>
+    </div>
   </div>
 
   <!-- Glassmorphic Popup Modal -->
