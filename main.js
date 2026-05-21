@@ -462,6 +462,7 @@ function initializeCountrySearch(features) {
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer && searchContainer.classList.contains('is-open')) {
           searchContainer.classList.remove('is-open');
+          document.body.classList.remove('search-open');
           searchInput.value = '';
           searchInput.blur();
           renderList(participatingFeatures);
@@ -544,12 +545,14 @@ function initializeCountrySearch(features) {
   searchInput.addEventListener('focus', () => {
     if (window.innerWidth <= 768) {
       searchContainer.classList.add('is-open');
+      document.body.classList.add('search-open');
     }
   });
   
   searchInput.addEventListener('click', () => {
     if (window.innerWidth <= 768) {
       searchContainer.classList.add('is-open');
+      document.body.classList.add('search-open');
     }
   });
 
@@ -557,6 +560,7 @@ function initializeCountrySearch(features) {
     closeSearchBtn.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent refocussing the search input
       searchContainer.classList.remove('is-open');
+      document.body.classList.remove('search-open');
       searchInput.value = '';
       searchInput.blur();
       renderList(participatingFeatures);
@@ -635,6 +639,11 @@ function openModal(country, recipe, isoCode, englishName) {
 }
 
 function closeModal() {
+  const shareMenu = document.getElementById('shareMenu');
+  if (shareMenu) {
+    shareMenu.classList.add('hidden');
+  }
+
   modal.classList.add('hidden');
   
   // Resume auto-rotation when the modal is closed
@@ -663,6 +672,7 @@ window.addEventListener('keydown', (e) => {
     const searchContainer = document.querySelector('.search-container');
     if (searchContainer && searchContainer.classList.contains('is-open')) {
       searchContainer.classList.remove('is-open');
+      document.body.classList.remove('search-open');
       const searchInput = document.getElementById('countrySearch');
       if (searchInput) {
         searchInput.value = '';
@@ -679,4 +689,107 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('resize', () => {
   world.width(window.innerWidth);
   world.height(window.innerHeight);
+});
+
+// ==========================================
+// RECIPE SHARE BUTTON & SOCIAL MEDIA MENU
+// ==========================================
+const shareUrl = "https://s3.glbimg.com/v1/AUTH_e03f7a1106bb438e970511f892f07c35/receitas/2026/pagina-especial-receitas-copa/index.html";
+
+function getShareMessage() {
+  const country = document.getElementById('countryName').textContent;
+  const dish = document.getElementById('recipeDish').textContent;
+  return `Confira a receita tradicional de *${dish}* do *${country}* na Copa dos Sabores! 🏆🥘 Veja mais aqui: ${shareUrl}`;
+}
+
+function copyTextToClipboard(text, successCallback) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(successCallback)
+      .catch(err => console.error('Erro ao copiar: ', err));
+  } else {
+    // Fallback using document.execCommand
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      successCallback();
+    } catch (err) {
+      console.error('Fallback error during copy:', err);
+    }
+    document.body.removeChild(textArea);
+  }
+}
+
+const shareBtn = document.getElementById('shareRecipeBtn');
+const shareMenu = document.getElementById('shareMenu');
+const shareWA = document.getElementById('shareWA');
+const shareTW = document.getElementById('shareTW');
+const shareIG = document.getElementById('shareIG');
+const shareCopy = document.getElementById('shareCopy');
+
+if (shareBtn && shareMenu) {
+  shareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    shareMenu.classList.toggle('hidden');
+  });
+}
+
+if (shareWA) {
+  shareWA.addEventListener('click', () => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(getShareMessage())}`;
+    window.open(url, '_blank');
+    shareMenu.classList.add('hidden');
+  });
+}
+
+if (shareTW) {
+  shareTW.addEventListener('click', () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareMessage())}`;
+    window.open(url, '_blank');
+    shareMenu.classList.add('hidden');
+  });
+}
+
+if (shareIG) {
+  shareIG.addEventListener('click', () => {
+    const shareText = getShareMessage();
+    copyTextToClipboard(shareText, () => {
+      const span = shareIG.querySelector('span');
+      const originalText = span.textContent;
+      span.textContent = 'Copiado no IG! 📸';
+      setTimeout(() => {
+        span.textContent = originalText;
+        shareMenu.classList.add('hidden');
+      }, 2000);
+    });
+  });
+}
+
+if (shareCopy) {
+  shareCopy.addEventListener('click', () => {
+    copyTextToClipboard(shareUrl, () => {
+      const span = shareCopy.querySelector('span');
+      const originalText = span.textContent;
+      span.textContent = 'Link Copiado! ✓';
+      setTimeout(() => {
+        span.textContent = originalText;
+        shareMenu.classList.add('hidden');
+      }, 2000);
+    });
+  });
+}
+
+// Global outside click listener to close sharing dropdown
+window.addEventListener('click', (e) => {
+  if (shareMenu && !shareMenu.classList.contains('hidden')) {
+    if (shareBtn && !shareBtn.contains(e.target) && !shareMenu.contains(e.target)) {
+      shareMenu.classList.add('hidden');
+    }
+  }
 });

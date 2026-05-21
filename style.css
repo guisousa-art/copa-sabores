@@ -167,9 +167,156 @@ p {
 .country-header-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
+
+.country-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==========================================
+   SHARE BUTTON & DROP-DOWN MENU STYLES
+   ========================================== */
+
+.share-container-popup {
+  position: relative;
+  display: inline-block;
+}
+
+.share-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #dddddd;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.share-btn svg {
+  flex-shrink: 0;
+}
+
+.share-btn:hover {
+  background: var(--accent-color);
+  color: #000000;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(255, 200, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.share-btn:active {
+  transform: translateY(0);
+}
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(10, 20, 18, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(40, 205, 210, 0.3);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(40, 205, 210, 0.08);
+  min-width: 170px;
+  transform-origin: top right;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+.share-menu.hidden {
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.share-menu-item {
+  background: none;
+  border: none;
+  color: #e5e5e5;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.share-menu-item:hover {
+  background: rgba(40, 205, 210, 0.12);
+  color: #ffffff;
+}
+
+.share-menu-item svg {
+  flex-shrink: 0;
+  color: #28cdd2;
+  transition: color 0.2s ease;
+}
+
+.share-menu-item:hover svg {
+  color: #ffffff;
+}
+
+/* WA specific color on hover */
+.share-menu-item#shareWA:hover {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25d366;
+}
+.share-menu-item#shareWA:hover svg {
+  color: #25d366;
+}
+
+/* X specific color on hover */
+.share-menu-item#shareTW:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.share-menu-item#shareTW:hover svg {
+  color: #ffffff;
+}
+
+/* IG specific color on hover */
+.share-menu-item#shareIG:hover {
+  background: rgba(225, 48, 108, 0.15);
+  color: #e1306c;
+}
+.share-menu-item#shareIG:hover svg {
+  color: #e1306c;
+}
+
+/* Copy specific color on hover */
+.share-menu-item#shareCopy:hover {
+  background: rgba(40, 205, 210, 0.15);
+  color: #28cdd2;
+}
+.share-menu-item#shareCopy:hover svg {
+  color: #28cdd2;
+}
+
 
 #countryFlag {
   width: 32px;
@@ -251,6 +398,7 @@ p {
   max-width: 500px;
   pointer-events: auto;
   animation: slideUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .zoom-controls-row {
@@ -522,6 +670,11 @@ p {
 /* ==========================================
    GLASSMORPHIC SEARCH CONTAINER & LIST STYLES
    ========================================== */
+
+.search-close-btn,
+#closeSearch {
+  display: none !important;
+}
 
 .search-container {
   margin-top: 40px; /* Increased margin to make room for the overlapping input */
@@ -819,6 +972,7 @@ p {
     z-index: 10;
     transform: none !important; /* Clear translateX(-50%) centering */
     animation: mobileSlideUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
   }
 
   /* Position collapsed search box at the bottom by default using bulletproof viewport centering */
@@ -935,8 +1089,17 @@ p {
     color: #28cdd2;
   }
   
-  .search-container.is-open .search-close-btn {
-    display: block; /* show when search overlay is active */
+  .search-container.is-open .search-close-btn,
+  .search-container.is-open #closeSearch {
+    display: block !important; /* show when search overlay is active */
+  }
+
+  /* Smoothly fade out globe controls when mobile search is open */
+  body.search-open .globe-controls {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
   }
 }
 
