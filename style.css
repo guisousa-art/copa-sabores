@@ -68,6 +68,7 @@ p {
   width: 100vw;
   height: 100vh;
   cursor: grab;
+  touch-action: none; /* Lock touch scrolling on the globe to prevent buggy embedding behaviors */
 }
 
 #globeViz:active {
@@ -392,6 +393,59 @@ p {
     top: 8px;
     right: 12px;
     font-size: 1.6rem;
+  }
+}
+
+/* Desktop layout: Left-aligned overlay title with no background box and solid yellow header */
+@media (min-width: 769px) {
+  header {
+    top: 50%;
+    left: 60px;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: 440px;
+    text-align: left;
+    padding: 0;
+  }
+  
+  .header-content {
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    animation: slideRight 1s ease-out forwards;
+  }
+  
+  h1 {
+    font-size: 3.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+    color: #ffc800; /* Solid yellow header */
+    margin-bottom: 20px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  
+  p {
+    font-size: 1.15rem;
+    line-height: 1.65;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 

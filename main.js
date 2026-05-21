@@ -106,6 +106,10 @@ fetch('./ne_110m_admin_0_countries.geojson')
     // Render all countries so outlines cover the entire globe
     world.polygonsData(countries.features);
 
+    // Make default globe size 25% smaller on mobile (increase altitude to 3.3 to zoom out)
+    const isMobile = window.innerWidth <= 480;
+    world.pointOfView({ altitude: isMobile ? 3.3 : 2.5 }, 0);
+
     // Setup Auto-rotation
     world.controls().autoRotate = true;
     world.controls().autoRotateSpeed = 0.25; // Slow down by 50%
