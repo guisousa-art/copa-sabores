@@ -56,6 +56,7 @@ h1 {
   margin-bottom: 10px;
   background: none;
   -webkit-background-clip: initial;
+  background-clip: initial;
   -webkit-text-fill-color: initial;
   color: #ffc800;
   /* Solid yellow of the outline */
