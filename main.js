@@ -35,9 +35,13 @@ const world = Globe()
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
+    const flagHtml = d.ISO_A2 && d.ISO_A2 !== '-99'
+      ? `<img src="https://flagcdn.com/w80/${d.ISO_A2.toLowerCase()}.png" style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px; border: 1.5px solid #ffc800; margin-bottom: 6px; display: block;" alt="flag">`
+      : '';
     return `
-    <div style="background: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 6px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}">
-      <b>${ptName}</b>${participating ? ' <span style="color: #ffc800; font-size: 0.85rem; margin-left: 4px;">★</span>' : ''}
+    <div style="background: rgba(0, 0, 0, 0.85); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center;">
+      ${flagHtml}
+      <b style="font-size: 0.95rem;">${ptName}</b>${participating ? ' <span style="color: #ffc800; font-size: 0.85rem; margin-top: 2px;">★</span>' : ''}
     </div>
   `})
   .onPolygonHover(hoverD => {
@@ -60,19 +64,50 @@ const world = Globe()
     if (d && isParticipating(d)) {
       const countryName = d.properties.ADMIN;
       const ptName = getCountryNamePT(d.properties);
-
-      // Check if we have a recipe for this country
       const recipe = recipesData[countryName];
 
-      if (recipe) {
-        openModal(ptName, recipe);
+      // Calculate geographic center and bounding box area
+      const { lat, lng, area } = getPolygonCenterAndArea(d);
+
+      // Determine zoom level based on physical size (bounding box area)
+      let zoomAltitude;
+      if (area < 15) {
+        zoomAltitude = 1.25; // Swiss, Belgium, etc. - Very deep zoom
+      } else if (area < 80) {
+        zoomAltitude = 1.5;  // Germany, Japan, Spain, France, UK - Deep zoom
+      } else if (area < 400) {
+        zoomAltitude = 1.95; // Saudi Arabia, Mexico, Colombia - Medium zoom
       } else {
-        // Fallback if no recipe found
-        openModal(ptName, {
-          dish: "Iguarias Locais",
-          description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
-          image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
-        });
+        zoomAltitude = 2.4;  // Brazil, USA, Canada, Australia - Wide zoom
+      }
+
+      // Add a slight height adjustment for mobile viewports
+      const isMobile = window.innerWidth <= 480;
+      if (isMobile) {
+        zoomAltitude += 0.45;
+      }
+
+      // Stop auto-rotation upon manual interaction/selection
+      if (world.controls().autoRotate) {
+        world.controls().autoRotate = false;
+      }
+
+      // Smooth camera transition to focus on the country
+      world.pointOfView({ lat, lng, altitude: zoomAltitude }, 800);
+
+      // Open the modal after a short delay so the user experiences the globe's visual pan transition
+      if (recipe) {
+        setTimeout(() => {
+          openModal(ptName, recipe, d.properties.ISO_A2);
+        }, 300);
+      } else {
+        setTimeout(() => {
+          openModal(ptName, {
+            dish: "Iguarias Locais",
+            description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
+            image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
+          }, d.properties.ISO_A2);
+        }, 300);
       }
     }
   });
@@ -97,6 +132,50 @@ function getCountryNamePT(d) {
     "Northern Cyprus": "Chipre do Norte"
   };
   return fallbacks[d.ADMIN] || d.ADMIN;
+}
+
+// Calculate geographic center and approximate bounding box area of a polygon/multipolygon
+function getPolygonCenterAndArea(feature) {
+  let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+  let totalPts = 0;
+  let sumLat = 0;
+  let sumLng = 0;
+
+  function processRing(ring) {
+    ring.forEach(pt => {
+      const lng = pt[0];
+      const lat = pt[1];
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      
+      sumLng += lng;
+      sumLat += lat;
+      totalPts++;
+    });
+  }
+
+  const geom = feature.geometry;
+  if (geom.type === 'Polygon') {
+    geom.coordinates.forEach(processRing);
+  } else if (geom.type === 'MultiPolygon') {
+    geom.coordinates.forEach(polygon => {
+      polygon.forEach(processRing);
+    });
+  }
+
+  const centerLat = totalPts > 0 ? sumLat / totalPts : 0;
+  const centerLng = totalPts > 0 ? sumLng / totalPts : 0;
+  const dLng = maxLng - minLng;
+  const dLat = maxLat - minLat;
+  const bboxArea = dLng * dLat;
+
+  return {
+    lat: centerLat,
+    lng: centerLng,
+    area: bboxArea || 1
+  };
 }
 
 // Load GeoJSON data for countries
@@ -173,11 +252,20 @@ fetch('./ne_110m_admin_0_countries.geojson')
   });
 
 // Modal Logic
-function openModal(country, recipe) {
+function openModal(country, recipe, isoCode) {
   countryNameEl.textContent = country;
   recipeDishEl.textContent = recipe.dish;
   recipeDescEl.textContent = recipe.description;
   recipeImageEl.src = recipe.image;
+
+  // Render Flag CDN Squared flag icon
+  const flagEl = document.getElementById('countryFlag');
+  if (isoCode && isoCode !== '-99') {
+    flagEl.src = `https://flagcdn.com/w80/${isoCode.toLowerCase()}.png`;
+    flagEl.style.display = 'block';
+  } else {
+    flagEl.style.display = 'none';
+  }
 
   modal.classList.remove('hidden');
 }
