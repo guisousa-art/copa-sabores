@@ -466,9 +466,14 @@ Promise.all([
         rotationSlider.value = Math.round(lng);
       }
     });
+
+    // Fade in the globe Viz once polygons and the overlay mesh are set up to prevent startup popping
+    const globeContainer = document.getElementById('globeViz');
+    if (globeContainer) {
+      globeContainer.classList.add('is-ready');
+    }
   });
 
-// Setup glassmorphic floating search list and filter logic
 function initializeCountrySearch(features) {
   const listEl = document.getElementById('countryList');
   const searchInput = document.getElementById('countrySearch');

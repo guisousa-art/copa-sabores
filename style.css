@@ -77,7 +77,13 @@ p {
   height: 100vh;
   cursor: grab;
   touch-action: none;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
   /* Lock touch scrolling on the globe to prevent buggy embedding behaviors */
+}
+
+#globeViz.is-ready {
+  opacity: 1;
 }
 
 #globeViz:active {
