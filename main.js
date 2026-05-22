@@ -353,28 +353,49 @@ Promise.all([
       const THREE = window.THREE;
       const textureLoader = new THREE.TextureLoader();
       
-      // Load the overlay halftone globe texture
+      // 1. Define overlay radius: default globe radius is 100, polygons sit at 0.01 altitude.
+      // Scaling by 1.012 places it perfectly at 101.2 units, sitting right above the base shapes
+      // and active country polygons, preventing Z-fighting / clipping!
+      const overlayRadius = world.getGlobeRadius() * 1.012; 
+      const overlayGeometry = new THREE.SphereGeometry(overlayRadius, 64, 64);
+      
+      // 2. Create the material with opacity 0 initially to eliminate the loading flicker.
+      // Uses custom "lighten" blending (MaxEquation takes the maximum of source and dest color channels).
+      const overlayMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        blending: THREE.CustomBlending,
+        blendEquation: THREE.MaxEquation,
+        blendSrc: THREE.SrcAlphaFactor,
+        blendDst: THREE.OneMinusSrcAlphaFactor,
+        depthWrite: false,                 // Avoid Z-sorting conflicts / Z-fighting
+        side: THREE.DoubleSide
+      });
+      
+      const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+      
+      // 3. Add empty mesh to scene immediately so it renders black/transparent
+      world.scene().add(overlayMesh);
+
+      // 4. Asynchronously load the texture and smoothly fade it in once loaded
       textureLoader.load('./assets/overlay-globe.png', (texture) => {
-        // Sphere geometry slightly larger than the globe plus polygon altitudes
-        // The globe radius is 100 by default. Polygons are at max 0.08 altitude on hover.
-        // 100.12 provides a perfect fit.
-        const overlayRadius = world.getGlobeRadius() + 0.12; 
-        const overlayGeometry = new THREE.SphereGeometry(overlayRadius, 64, 64);
-        
-        // Create material with blend-mode
-        const overlayMaterial = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: true,
-          opacity: 0.85,                     // Adjustable opacity for perfect blending
-          blending: THREE.MultiplyBlending,  // Blends texture colors onto the shapes below
-          depthWrite: false,                 // Avoid Z-sorting conflicts / Z-fighting
-          side: THREE.DoubleSide
-        });
-        
-        const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
-        
-        // Add overlay mesh to the Three.js scene
-        world.scene().add(overlayMesh);
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        overlayMaterial.map = texture;
+        overlayMaterial.needsUpdate = true;
+
+        // Smooth fade-in animation to prevent sudden snapping
+        let currentOpacity = 0;
+        function fadeIn() {
+          if (currentOpacity < 0.85) {
+            currentOpacity += 0.04;
+            overlayMaterial.opacity = currentOpacity;
+            requestAnimationFrame(fadeIn);
+          } else {
+            overlayMaterial.opacity = 0.85; // cap at target opacity
+          }
+        }
+        fadeIn();
       });
     }
 
