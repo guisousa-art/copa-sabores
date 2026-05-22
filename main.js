@@ -339,19 +339,40 @@ function getPolygonCenterAndArea(feature) {
 // Start loading recipes from sheet immediately
 const recipesPromise = loadRecipesFromSheet();
 
-// Load GeoJSON data for countries and sheet recipes in parallel
+// Texture loader wrapped in a Promise to integrate with parallel page initialization
+const loadTexture = (url) => {
+  return new Promise((resolve) => {
+    if (!window.THREE) {
+      console.warn("THREE is not defined, skipping texture load");
+      resolve(null);
+      return;
+    }
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      url,
+      (texture) => resolve(texture),
+      undefined,
+      (err) => {
+        console.warn("Failed to load overlay texture:", err);
+        resolve(null);
+      }
+    );
+  });
+};
+
+// Load GeoJSON data for countries, sheet recipes, and texture in parallel
 Promise.all([
   fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
-  recipesPromise
+  recipesPromise,
+  loadTexture('./assets/overlay-globe.png')
 ])
-  .then(([countries]) => {
+  .then(([countries, recipes, texture]) => {
     // Render all countries so outlines cover the entire globe
     world.polygonsData(countries.features);
 
     // Premium Halftone Globe Texture Overlay (Method 2)
-    if (window.THREE) {
+    if (window.THREE && texture) {
       const THREE = window.THREE;
-      const textureLoader = new THREE.TextureLoader();
       
       // 1. Define overlay radius: default globe radius is 100, polygons sit at 0.01 altitude.
       // Scaling by 1.012 places it perfectly at 101.2 units, sitting right above the base shapes
@@ -359,11 +380,15 @@ Promise.all([
       const overlayRadius = world.getGlobeRadius() * 1.012; 
       const overlayGeometry = new THREE.SphereGeometry(overlayRadius, 64, 64);
       
-      // 2. Create the material with opacity 0 initially to eliminate the loading flicker.
-      // Uses custom "lighten" blending (MaxEquation takes the maximum of source and dest color channels).
+      // Ensure the texture wraps smoothly
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+
+      // 2. Create the material with custom "lighten" blending (MaxEquation) and preloaded texture.
       const overlayMaterial = new THREE.MeshBasicMaterial({
+        map: texture,
         transparent: true,
-        opacity: 0,
+        opacity: 0.85,                     // Set directly to target opacity since it is preloaded
         blending: THREE.CustomBlending,
         blendEquation: THREE.MaxEquation,
         blendSrc: THREE.SrcAlphaFactor,
@@ -374,29 +399,12 @@ Promise.all([
       
       const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
       
-      // 3. Add empty mesh to scene immediately so it renders black/transparent
+      // 3. CRITICAL: Override the raycast function to be completely empty.
+      // This allows mouse raycasting to pass right through the overlay mesh and detect country hovers/clicks!
+      overlayMesh.raycast = () => {};
+
+      // 4. Add the overlay mesh directly to the scene
       world.scene().add(overlayMesh);
-
-      // 4. Asynchronously load the texture and smoothly fade it in once loaded
-      textureLoader.load('./assets/overlay-globe.png', (texture) => {
-        texture.wrapS = THREE.ClampToEdgeWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        overlayMaterial.map = texture;
-        overlayMaterial.needsUpdate = true;
-
-        // Smooth fade-in animation to prevent sudden snapping
-        let currentOpacity = 0;
-        function fadeIn() {
-          if (currentOpacity < 0.85) {
-            currentOpacity += 0.04;
-            overlayMaterial.opacity = currentOpacity;
-            requestAnimationFrame(fadeIn);
-          } else {
-            overlayMaterial.opacity = 0.85; // cap at target opacity
-          }
-        }
-        fadeIn();
-      });
     }
 
     // Initialize the glassmorphic search panel with country rows
@@ -467,10 +475,13 @@ Promise.all([
       }
     });
 
-    // Fade in the globe Viz once polygons and the overlay mesh are set up to prevent startup popping
+    // Fade in the globe Viz after a minor rendering buffer delay (150ms) to ensure
+    // the WebGL context compiles and renders the first frame cleanly without visual pops/flickers
     const globeContainer = document.getElementById('globeViz');
     if (globeContainer) {
-      globeContainer.classList.add('is-ready');
+      setTimeout(() => {
+        globeContainer.classList.add('is-ready');
+      }, 150);
     }
   });
 
