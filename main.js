@@ -348,6 +348,36 @@ Promise.all([
     // Render all countries so outlines cover the entire globe
     world.polygonsData(countries.features);
 
+    // Premium Halftone Globe Texture Overlay (Method 2)
+    if (window.THREE) {
+      const THREE = window.THREE;
+      const textureLoader = new THREE.TextureLoader();
+      
+      // Load the overlay halftone globe texture
+      textureLoader.load('./assets/overlay-globe.png', (texture) => {
+        // Sphere geometry slightly larger than the globe plus polygon altitudes
+        // The globe radius is 100 by default. Polygons are at max 0.08 altitude on hover.
+        // 100.12 provides a perfect fit.
+        const overlayRadius = world.getGlobeRadius() + 0.12; 
+        const overlayGeometry = new THREE.SphereGeometry(overlayRadius, 64, 64);
+        
+        // Create material with blend-mode
+        const overlayMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          opacity: 0.85,                     // Adjustable opacity for perfect blending
+          blending: THREE.MultiplyBlending,  // Blends texture colors onto the shapes below
+          depthWrite: false,                 // Avoid Z-sorting conflicts / Z-fighting
+          side: THREE.DoubleSide
+        });
+        
+        const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+        
+        // Add overlay mesh to the Three.js scene
+        world.scene().add(overlayMesh);
+      });
+    }
+
     // Initialize the glassmorphic search panel with country rows
     initializeCountrySearch(countries.features);
 
