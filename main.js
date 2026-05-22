@@ -384,15 +384,12 @@ Promise.all([
       texture.wrapS = THREE.ClampToEdgeWrapping;
       texture.wrapT = THREE.ClampToEdgeWrapping;
 
-      // 2. Create the material with custom "lighten" blending (MaxEquation) and preloaded texture.
+      // 2. Create the material with standard transparent blending (NormalBlending) so the black dots
+      // render beautifully as dark halftone shading on top of the colored countries and oceans!
       const overlayMaterial = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true,
-        opacity: 0.85,                     // Set directly to target opacity since it is preloaded
-        blending: THREE.CustomBlending,
-        blendEquation: THREE.MaxEquation,
-        blendSrc: THREE.SrcAlphaFactor,
-        blendDst: THREE.OneMinusSrcAlphaFactor,
+        opacity: 0.75,                     // High-fidelity opacity for elegant shading
         depthWrite: false,                 // Avoid Z-sorting conflicts / Z-fighting
         side: THREE.DoubleSide
       });
