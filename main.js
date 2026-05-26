@@ -339,70 +339,14 @@ function getPolygonCenterAndArea(feature) {
 // Start loading recipes from sheet immediately
 const recipesPromise = loadRecipesFromSheet();
 
-// Texture loader wrapped in a Promise to integrate with parallel page initialization
-const loadTexture = (url) => {
-  return new Promise((resolve) => {
-    if (!window.THREE) {
-      console.warn("THREE is not defined, skipping texture load");
-      resolve(null);
-      return;
-    }
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      url,
-      (texture) => resolve(texture),
-      undefined,
-      (err) => {
-        console.warn("Failed to load overlay texture:", err);
-        resolve(null);
-      }
-    );
-  });
-};
-
-// Load GeoJSON data for countries, sheet recipes, and texture in parallel
+// Load GeoJSON data for countries and sheet recipes in parallel
 Promise.all([
   fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
-  recipesPromise,
-  loadTexture('./assets/overlay-globe.png')
+  recipesPromise
 ])
-  .then(([countries, recipes, texture]) => {
+  .then(([countries]) => {
     // Render all countries so outlines cover the entire globe
     world.polygonsData(countries.features);
-
-    // Premium Halftone Globe Texture Overlay (Method 2)
-    if (window.THREE && texture) {
-      const THREE = window.THREE;
-      
-      // 1. Define overlay radius: default globe radius is 100, polygons sit at 0.01 altitude.
-      // Scaling by 1.012 places it perfectly at 101.2 units, sitting right above the base shapes
-      // and active country polygons, preventing Z-fighting / clipping!
-      const overlayRadius = world.getGlobeRadius() * 1.012; 
-      const overlayGeometry = new THREE.SphereGeometry(overlayRadius, 64, 64);
-      
-      // Ensure the texture wraps smoothly
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-
-      // 2. Create the material with standard transparent blending (NormalBlending) so the black dots
-      // render beautifully as dark halftone shading on top of the colored countries and oceans!
-      const overlayMaterial = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.75,                     // High-fidelity opacity for elegant shading
-        depthWrite: false,                 // Avoid Z-sorting conflicts / Z-fighting
-        side: THREE.DoubleSide
-      });
-      
-      const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
-      
-      // 3. CRITICAL: Override the raycast function to be completely empty.
-      // This allows mouse raycasting to pass right through the overlay mesh and detect country hovers/clicks!
-      overlayMesh.raycast = () => {};
-
-      // 4. Add the overlay mesh directly to the scene
-      world.scene().add(overlayMesh);
-    }
 
     // Initialize the glassmorphic search panel with country rows
     initializeCountrySearch(countries.features);
@@ -482,6 +426,7 @@ Promise.all([
     }
   });
 
+// Setup glassmorphic floating search list and filter logic
 function initializeCountrySearch(features) {
   const listEl = document.getElementById('countryList');
   const searchInput = document.getElementById('countrySearch');

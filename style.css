@@ -15,7 +15,8 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: #0d3026; /* Dark green background */
+  background-color: #0d3026;
+  /* Dark green background */
   /* background-image: url('./assets/background.png'); */
   /* background-size: cover; */
   /* background-position: center; */
@@ -123,7 +124,8 @@ p {
   box-shadow: var(--glass-shadow);
   width: 90%;
   max-width: 500px;
-  overflow: visible; /* Prevent clipping of absolute positioned share dropdown menu */
+  overflow: visible;
+  /* Prevent clipping of absolute positioned share dropdown menu */
   position: relative;
   transform: scale(1);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -295,6 +297,7 @@ p {
   background: rgba(37, 211, 102, 0.15);
   color: #25d366;
 }
+
 .share-menu-item#shareWA:hover svg {
   color: #25d366;
 }
@@ -304,6 +307,7 @@ p {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
+
 .share-menu-item#shareTW:hover svg {
   color: #ffffff;
 }
@@ -313,6 +317,7 @@ p {
   background: rgba(225, 48, 108, 0.15);
   color: #e1306c;
 }
+
 .share-menu-item#shareIG:hover svg {
   color: #e1306c;
 }
@@ -322,6 +327,7 @@ p {
   background: rgba(40, 205, 210, 0.15);
   color: #28cdd2;
 }
+
 .share-menu-item#shareCopy:hover svg {
   color: #28cdd2;
 }
@@ -386,6 +392,7 @@ p {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -514,6 +521,7 @@ p {
     transform: translateY(50px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -568,7 +576,8 @@ p {
   }
 
   .globe-controls {
-    bottom: 104px; /* Stacked right above the bottom search card */
+    bottom: 104px;
+    /* Stacked right above the bottom search card */
     padding: 14px 16px;
     gap: 12px;
     width: 92%;
@@ -602,7 +611,8 @@ p {
     border-radius: 20px;
     display: flex;
     flex-direction: column;
-    overflow: visible; /* Prevent clipping dropdown on mobile height constraints */
+    overflow: visible;
+    /* Prevent clipping dropdown on mobile height constraints */
   }
 
   .recipe-image-container {
@@ -676,7 +686,8 @@ p {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    overflow: visible; /* Let share dropdown menu overflow without clipping */
+    overflow: visible;
+    /* Let share dropdown menu overflow without clipping */
   }
 
   .recipe-image-container {
@@ -745,7 +756,8 @@ p {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 101; /* Layer over the scrolling content */
+    z-index: 101;
+    /* Layer over the scrolling content */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -781,7 +793,8 @@ p {
 }
 
 .search-container {
-  margin-top: 40px; /* Increased margin to make room for the overlapping input */
+  margin-top: 40px;
+  /* Increased margin to make room for the overlapping input */
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -789,26 +802,31 @@ p {
   border: 1px solid rgba(40, 205, 210, 0.25);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(40, 205, 210, 0.1);
   padding: 16px;
-  width: 100%;
+  width: 70%;
   display: flex;
   flex-direction: column;
   gap: 12px;
   animation: searchSlideUp 0.8s ease-out forwards;
-  pointer-events: auto; /* Ensure inputs and items can be clicked */
+  pointer-events: auto;
+  /* Ensure inputs and items can be clicked */
 }
 
 .search-input-wrapper {
   position: relative;
   width: 100%;
-  margin: -32px 0 12px 0; /* Shift up by 32px to cross the top border, keeping it inset horizontally */
-  z-index: 2; /* Sits above the container border */
+  margin: -32px 0 12px 0;
+  /* Shift up by 32px to cross the top border, keeping it inset horizontally */
+  z-index: 2;
+  /* Sits above the container border */
 }
 
 #countrySearch {
   width: 100%;
   padding: 14px 16px;
-  background: #060e0d; /* Opaque premium dark background matching reference */
-  border: 1.5px solid #28cdd2; /* Vibrant teal border from reference */
+  background: #060e0d;
+  /* Opaque premium dark background matching reference */
+  border: 1.5px solid #28cdd2;
+  /* Vibrant teal border from reference */
   border-radius: 14px;
   color: #ffffff;
   font-family: 'Outfit', sans-serif;
@@ -833,7 +851,8 @@ p {
 /* Country List UL */
 .country-list {
   list-style: none;
-  max-height: 230px; /* Capped scroll height for premium feel */
+  max-height: 230px;
+  /* Capped scroll height for premium feel */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -876,7 +895,8 @@ p {
 
 .country-item:hover {
   background: rgba(40, 205, 210, 0.08);
-  padding-left: 12px; /* Smooth micro-movement */
+  padding-left: 12px;
+  /* Smooth micro-movement */
 }
 
 /* Flags and placeholders inside list */
@@ -930,7 +950,8 @@ p {
 .recipe-section h4 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #28cdd2; /* Vibrant green/teal */
+  color: #28cdd2;
+  /* Vibrant green/teal */
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1030,6 +1051,7 @@ p {
     opacity: 0;
     transform: translateY(5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1041,6 +1063,7 @@ p {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1052,6 +1075,7 @@ p {
    ========================================== */
 
 @media (max-width: 768px) {
+
   /* Disable transform-based slideDown animation to prevent creating a containing block on mobile */
   .header-content {
     animation: fadeInHeader 1s ease-out forwards;
@@ -1067,14 +1091,16 @@ p {
   /* Stack globe controls perfectly above the bottom search container using bulletproof viewport centering */
   .globe-controls {
     position: fixed;
-    bottom: 104px; /* 20px base bottom margin + 72px collapsed search box + 12px stack gap */
+    bottom: 104px;
+    /* 20px base bottom margin + 72px collapsed search box + 12px stack gap */
     left: 0;
     right: 0;
     margin: 0 auto;
     width: 90%;
     max-width: 460px;
     z-index: 10;
-    transform: none !important; /* Clear translateX(-50%) centering */
+    transform: none !important;
+    /* Clear translateX(-50%) centering */
     animation: mobileSlideUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     transition: opacity 0.3s ease, visibility 0.3s ease;
   }
@@ -1089,7 +1115,8 @@ p {
     width: 90%;
     max-width: 460px;
     z-index: 20;
-    transform: none !important; /* Clear translateX(-50%) centering */
+    transform: none !important;
+    /* Clear translateX(-50%) centering */
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -1102,7 +1129,7 @@ p {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   /* Collapsed state hides list items */
   .search-container:not(.is-open) .country-list {
     max-height: 0;
@@ -1113,12 +1140,12 @@ p {
     border: none;
     pointer-events: none;
   }
-  
+
   .search-container:not(.is-open) .search-input-wrapper {
     margin: 0;
     width: 100%;
   }
-  
+
   /* Expanded full screen modal overlay */
   .search-container.is-open {
     position: fixed;
@@ -1129,9 +1156,11 @@ p {
     width: 100vw;
     height: 100vh;
     max-width: 100%;
-    transform: none !important; /* Remove center translate alignment */
+    transform: none !important;
+    /* Remove center translate alignment */
     border-radius: 0;
-    background: rgba(4, 10, 9, 0.98); /* Opaque high-end dark background */
+    background: rgba(4, 10, 9, 0.98);
+    /* Opaque high-end dark background */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: none;
@@ -1139,16 +1168,17 @@ p {
     padding: 24px;
     gap: 20px;
   }
-  
+
   .search-container.is-open .search-input-wrapper {
     margin: 0;
     width: 100%;
   }
-  
+
   .search-container.is-open #countrySearch {
-    padding-right: 44px; /* Leave space for close icon */
+    padding-right: 44px;
+    /* Leave space for close icon */
   }
-  
+
   .search-container.is-open .country-list {
     max-height: calc(100vh - 120px);
     opacity: 1;
@@ -1157,14 +1187,15 @@ p {
     gap: 12px;
     padding-right: 0;
   }
-  
+
   .search-container.is-open .country-item {
-    padding: 16px 12px; /* Enhanced touch target size */
+    padding: 16px 12px;
+    /* Enhanced touch target size */
     background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.04);
   }
-  
+
   .search-container.is-open .country-item:active {
     background: rgba(40, 205, 210, 0.12);
     border-color: rgba(40, 205, 210, 0.3);
@@ -1181,21 +1212,23 @@ p {
     color: rgba(255, 255, 255, 0.5);
     font-size: 1.8rem;
     cursor: pointer;
-    display: none; /* hidden when collapsed */
+    display: none;
+    /* hidden when collapsed */
     z-index: 10;
     line-height: 1;
     padding: 4px;
     transition: color 0.2s ease;
   }
-  
+
   .search-close-btn:hover,
   .search-close-btn:active {
     color: #28cdd2;
   }
-  
+
   .search-container.is-open .search-close-btn,
   .search-container.is-open #closeSearch {
-    display: block !important; /* show when search overlay is active */
+    display: block !important;
+    /* show when search overlay is active */
   }
 
   /* Smoothly fade out globe controls when mobile search is open */
@@ -1209,6 +1242,7 @@ p {
 
 @media (max-width: 480px) {
   .ingredients-grid {
-    grid-template-columns: 1fr; /* Single column ingredients on phone */
+    grid-template-columns: 1fr;
+    /* Single column ingredients on phone */
   }
 }
