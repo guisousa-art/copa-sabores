@@ -5,9 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Copa dos Sabores | Receitas Nacionais</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 
   <!-- Use Globe.gl via unpkg -->
@@ -19,8 +16,7 @@
   <header>
     <div class="header-content">
       <h1>Copa dos Sabores</h1>
-      <p>Descubra a rica herança culinária das nações da Copa.<br>Clique em um país para explorar sua receita
-        característica.</p>
+      <p>Descubra sabores que contam histórias<br>das nações da Copa pelo mundo.<br>Clique em um país e veja a receita.</p>
       
       <!-- Glassmorphic Search Panel -->
       <div class="search-container glass-effect">
@@ -39,8 +35,10 @@
 
   <!-- Globe Controls Panel -->
   <div class="globe-controls glass-effect">
-    <div class="slider-container">
-      <input type="range" id="rotationSlider" min="0" max="360" value="0" aria-label="Rotate Globe">
+    <div class="rotation-drag-control" id="rotationDragControl" role="slider" aria-label="Girar globo" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+      <div class="rotation-drag-track">
+        <div class="rotation-drag-thumb" id="rotationDragThumb"></div>
+      </div>
     </div>
     <div class="zoom-controls-row">
       <button id="zoomOut" class="control-btn" title="Zoom Out">−</button>
@@ -61,30 +59,6 @@
             <img id="countryFlag" src="" alt="Flag Icon">
             <h2 id="countryName">Nome do País</h2>
           </div>
-          <div class="share-container-popup">
-            <button id="shareRecipeBtn" class="share-btn" aria-label="Compartilhar receita">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-              <span>Compartilhar</span>
-            </button>
-            <div id="shareMenu" class="share-menu hidden">
-              <button id="shareWA" class="share-menu-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                <span>WhatsApp</span>
-              </button>
-              <button id="shareTW" class="share-menu-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
-                <span>Twitter / X</span>
-              </button>
-              <button id="shareIG" class="share-menu-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                <span>Instagram</span>
-              </button>
-              <button id="shareCopy" class="share-menu-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>Copiar Link</span>
-              </button>
-            </div>
-          </div>
         </div>
         <div id="countryTitles" class="country-titles-badges">🏆 0 títulos</div>
         <h3 id="recipeDish">Nome do Prato</h3>
@@ -97,14 +71,8 @@
             <!-- Dynamically populated -->
           </ul>
         </div>
-        
-        <!-- Instructions Section -->
-        <div id="instructionsSection" class="recipe-section hidden">
-          <h4>Modo de Preparo</h4>
-          <ol id="instructionsList" class="instructions-steps">
-            <!-- Dynamically populated -->
-          </ol>
-        </div>
+
+        <a id="fullRecipeCta" class="recipe-cta hidden" href="https://receitas.globo.com/" target="_blank" rel="noopener noreferrer">Venha ver a receita completa</a>
       </div>
     </div>
   </div>

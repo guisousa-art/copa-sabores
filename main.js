@@ -45,6 +45,10 @@ const sheetCountryMap = {
 };
 
 let fetchedRecipesData = {};
+const initialGlobeLat = 8;
+const originalGlobeLng = -51.925;
+const initialGlobeRotationOffset = -10;
+const initialGlobeLng = originalGlobeLng + initialGlobeRotationOffset;
 
 // Bulletproof CSV Parser to handle comma-delimited fields, quotes, and newlines
 function parseCSV(csvText) {
@@ -172,15 +176,60 @@ const countryNameEl = document.getElementById('countryName');
 const recipeDishEl = document.getElementById('recipeDish');
 const recipeDescEl = document.getElementById('recipeDesc');
 const recipeImageEl = document.getElementById('recipeImage');
+let hoveredPolygon = null;
+let autoRotatePausedByHover = false;
+let hoverResetTimeout = null;
+
+function getDefaultGlobeView() {
+  const isMobile = window.innerWidth <= 480;
+  return {
+    lat: initialGlobeLat,
+    lng: initialGlobeLng,
+    altitude: isMobile ? 3.65 : 2.5
+  };
+}
+
+function setDefaultGlobeView(duration = 0) {
+  world.pointOfView(getDefaultGlobeView(), duration);
+}
+
+function getHoverAltitude(feature) {
+  const { area } = getPolygonCenterAndArea(feature);
+
+  if (area < 15) return 0.07;
+  if (area < 80) return 0.055;
+  if (area < 400) return 0.045;
+  return 0.035;
+}
+
+function resetHoverStyles() {
+  const container = document.getElementById('globeViz');
+  if (container) {
+    container.style.cursor = 'default';
+  }
+
+  if (autoRotatePausedByHover) {
+    world.controls().autoRotate = true;
+    autoRotatePausedByHover = false;
+  }
+
+  world
+    .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
+    .polygonCapColor(d => isParticipating(d) ? '#a5147d' : '#5a2864')
+    .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
+    .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40');
+}
 
 // Setup Globe
 const world = Globe()
   (document.getElementById('globeViz'))
   .backgroundColor('rgba(0, 0, 0, 0)')
+  .atmosphereColor('#008c9b')
+  .atmosphereAltitude(0.2)
   .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
-  .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)') // participating vs muted red for other lands
-  .polygonSideColor(d => isParticipating(d) ? 'rgba(255, 200, 0, 0.3)' : 'rgba(0, 0, 0, 0)')
-  .polygonStrokeColor(d => isParticipating(d) ? '#28cdd2' : '#008c9b40') // yellow borders (#ffc800)
+  .polygonCapColor(d => isParticipating(d) ? '#a5147d' : '#5a2864') // participating vs muted red for other lands
+  .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
+  .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40') // yellow borders (#ffc800)
   .polygonLabel(({ properties: d }) => {
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
@@ -194,7 +243,7 @@ const world = Globe()
          </div>`
       : '';
     return `
-    <div style="background: rgba(0, 0, 0, 0.9); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Outfit', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+    <div style="background: rgba(0, 0, 0, 0.9); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Globo Tx', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
       <div style="display: flex; align-items: center; gap: 8px;">
         ${flagHtml}
         <b style="font-size: 0.95rem; white-space: nowrap;">${ptName}</b>
@@ -203,19 +252,32 @@ const world = Globe()
     </div>
   `})
   .onPolygonHover(hoverD => {
+    if (hoverResetTimeout && hoverD) {
+      window.clearTimeout(hoverResetTimeout);
+      hoverResetTimeout = null;
+    }
+
+    if (hoverD === hoveredPolygon) return;
+
     const container = document.getElementById('globeViz');
     if (hoverD && isParticipating(hoverD)) {
+      hoveredPolygon = hoverD;
       container.style.cursor = 'pointer';
+      if (world.controls().autoRotate) {
+        world.controls().autoRotate = false;
+        autoRotatePausedByHover = true;
+      }
       world
-        .polygonAltitude(d => d === hoverD ? 0.08 : (isParticipating(d) ? 0.01 : 0.002))
-        .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)'))
-        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#28cdd2' : '#008c9b40'));
+        .polygonAltitude(d => d === hoverD ? getHoverAltitude(hoverD) : (isParticipating(d) ? 0.01 : 0.002))
+        .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#a5147d' : '#5a2864'))
+        .polygonSideColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)'))
+        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#f0739b' : '#a5147d40'));
     } else {
-      container.style.cursor = 'default';
-      world
-        .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
-        .polygonCapColor(d => isParticipating(d) ? '#be1e1e' : 'rgba(190, 30, 30, 0.35)')
-        .polygonStrokeColor(d => isParticipating(d) ? '#28cdd2' : '#008c9b40');
+      hoveredPolygon = null;
+      hoverResetTimeout = window.setTimeout(() => {
+        hoverResetTimeout = null;
+        resetHoverStyles();
+      }, 140);
     }
   })
   .onPolygonClick(d => {
@@ -351,34 +413,115 @@ Promise.all([
     // Initialize the glassmorphic search panel with country rows
     initializeCountrySearch(countries.features);
 
-    // Make default globe size 25% smaller on mobile (increase altitude to 3.3 to zoom out)
-    const isMobile = window.innerWidth <= 480;
-    world.pointOfView({ lat: -14.235, lng: -51.925, altitude: isMobile ? 3.3 : 2.5 }, 0);
-
     // Setup Auto-rotation
     world.controls().autoRotate = true;
     world.controls().autoRotateSpeed = 0.25; // Slow down by 50%
     world.controls().enableZoom = false;   // Disable default scroll zoom
     world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
+    setDefaultGlobeView(0);
 
     // Custom Globe Controls (Placed inside .then to ensure controls are initialized)
     const zoomInBtn = document.getElementById('zoomIn');
     const zoomOutBtn = document.getElementById('zoomOut');
-    const rotationSlider = document.getElementById('rotationSlider');
+    const rotationDragControl = document.getElementById('rotationDragControl');
+    const rotationDragThumb = document.getElementById('rotationDragThumb');
 
-    // Handle Rotation via Slider
-    rotationSlider.addEventListener('input', (e) => {
-      // Disable autoRotate upon manual interaction
+    // Handle spring-back drag rotation without enabling native globe gestures in embeds
+    let isDraggingRotation = false;
+    let dragStartX = 0;
+    let dragStartLng = 0;
+    let trackWidth = 1;
+
+    function setRotationThumb(deltaX) {
+      if (!rotationDragThumb) return;
+      const maxOffset = Math.max(28, (trackWidth / 2) - 14);
+      const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, deltaX));
+      rotationDragThumb.style.transform = `translate(-50%, -50%) translateX(${clampedOffset}px)`;
+      if (rotationDragControl) {
+        rotationDragControl.setAttribute('aria-valuenow', String(Math.round((clampedOffset / maxOffset) * 100)));
+      }
+    }
+
+    function resetRotationThumb() {
+      if (!rotationDragThumb) return;
+      rotationDragThumb.classList.add('is-returning');
+      rotationDragThumb.style.transform = 'translate(-50%, -50%) translateX(0)';
+      if (rotationDragControl) {
+        rotationDragControl.setAttribute('aria-valuenow', '0');
+      }
+      window.setTimeout(() => {
+        rotationDragThumb.classList.remove('is-returning');
+      }, 220);
+    }
+
+    function moveRotation(clientX) {
+      const deltaX = clientX - dragStartX;
+      const currentPOV = world.pointOfView();
+      const degreesPerPixel = 180 / Math.max(trackWidth, 1);
+      world.pointOfView({
+        lat: currentPOV.lat,
+        lng: dragStartLng + (deltaX * degreesPerPixel),
+        altitude: currentPOV.altitude
+      }, 0);
+      setRotationThumb(deltaX);
+    }
+
+    function stopRotationDrag() {
+      if (!isDraggingRotation) return;
+      isDraggingRotation = false;
+      resetRotationThumb();
+      world.controls().autoRotate = true;
+      window.removeEventListener('pointermove', onRotationPointerMove);
+      window.removeEventListener('pointerup', stopRotationDrag);
+      window.removeEventListener('pointercancel', stopRotationDrag);
+    }
+
+    function onRotationPointerMove(e) {
+      if (!isDraggingRotation) return;
+      e.preventDefault();
+      moveRotation(e.clientX);
+    }
+
+    if (rotationDragControl) {
+      rotationDragControl.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+
+        // Disable autoRotate upon manual interaction
+        if (world.controls().autoRotate) {
+          world.controls().autoRotate = false;
+        }
+
+        const rect = rotationDragControl.getBoundingClientRect();
+        trackWidth = rect.width;
+        dragStartX = e.clientX;
+        dragStartLng = world.pointOfView().lng;
+        isDraggingRotation = true;
+        if (rotationDragThumb) {
+          rotationDragThumb.classList.remove('is-returning');
+        }
+
+        window.addEventListener('pointermove', onRotationPointerMove, { passive: false });
+        window.addEventListener('pointerup', stopRotationDrag);
+        window.addEventListener('pointercancel', stopRotationDrag);
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!rotationDragControl || document.activeElement !== rotationDragControl) return;
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+
       if (world.controls().autoRotate) {
         world.controls().autoRotate = false;
       }
 
       const currentPOV = world.pointOfView();
+      const direction = e.key === 'ArrowRight' ? 1 : -1;
       world.pointOfView({
         lat: currentPOV.lat,
-        lng: Number(e.target.value),
+        lng: currentPOV.lng + (direction * 8),
         altitude: currentPOV.altitude
-      }, 0); // Instant 0ms transition for smooth dragging
+      }, 150);
     });
 
     // Handle Zoom In
@@ -405,22 +548,12 @@ Promise.all([
       }, 400); // Fluid 400ms transition
     });
 
-    // Sync Slider Position with Auto-Rotation
-    world.controls().addEventListener('change', () => {
-      if (world.controls().autoRotate) {
-        const pov = world.pointOfView();
-        // Normalize longitude to [0, 360)
-        let lng = pov.lng % 360;
-        if (lng < 0) lng += 360;
-        rotationSlider.value = Math.round(lng);
-      }
-    });
-
     // Fade in the globe Viz after a minor rendering buffer delay (150ms) to ensure
     // the WebGL context compiles and renders the first frame cleanly without visual pops/flickers
     const globeContainer = document.getElementById('globeViz');
     if (globeContainer) {
       setTimeout(() => {
+        setDefaultGlobeView(0);
         globeContainer.classList.add('is-ready');
       }, 150);
     }
@@ -604,11 +737,10 @@ function openModal(country, recipe, isoCode, englishName) {
     }
   }
 
-  // Populate dynamic sheet-fed ingredients and instructions
+  // Populate dynamic sheet-fed ingredients
   const ingredientsSection = document.getElementById('ingredientsSection');
   const ingredientsList = document.getElementById('ingredientsList');
-  const instructionsSection = document.getElementById('instructionsSection');
-  const instructionsList = document.getElementById('instructionsList');
+  const fullRecipeCta = document.getElementById('fullRecipeCta');
 
   if (recipe.ingredients && recipe.ingredients.length > 0) {
     ingredientsList.innerHTML = '';
@@ -627,20 +759,8 @@ function openModal(country, recipe, isoCode, englishName) {
     ingredientsSection.classList.add('hidden');
   }
 
-  if (recipe.instructions && recipe.instructions.length > 0) {
-    instructionsList.innerHTML = '';
-    recipe.instructions.forEach((step, idx) => {
-      const li = document.createElement('li');
-      li.className = 'instruction-step';
-      li.innerHTML = `
-        <span class="step-number">${idx + 1}</span>
-        <span class="step-text">${step}</span>
-      `;
-      instructionsList.appendChild(li);
-    });
-    instructionsSection.classList.remove('hidden');
-  } else {
-    instructionsSection.classList.add('hidden');
+  if (fullRecipeCta) {
+    fullRecipeCta.classList.remove('hidden');
   }
 
   recipeImageEl.src = recipe.image;
@@ -648,24 +768,13 @@ function openModal(country, recipe, isoCode, englishName) {
 }
 
 function closeModal() {
-  const shareMenu = document.getElementById('shareMenu');
-  if (shareMenu) {
-    shareMenu.classList.add('hidden');
-  }
-
   modal.classList.add('hidden');
   
   // Resume auto-rotation when the modal is closed
   world.controls().autoRotate = true;
 
-  // Reset camera vertical rotation (lat to 0) and altitude back to defaults
-  const currentPOV = world.pointOfView();
-  const isMobile = window.innerWidth <= 480;
-  world.pointOfView({
-    lat: 0,
-    lng: currentPOV.lng,
-    altitude: isMobile ? 3.3 : 2.5
-  }, 800); // smooth 800ms transition
+  // Reset camera back to the initial framing after closing a recipe
+  setDefaultGlobeView(800);
 }
 
 closeModalBtn.addEventListener('click', closeModal);
@@ -698,104 +807,4 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('resize', () => {
   world.width(window.innerWidth);
   world.height(window.innerHeight);
-});
-
-// ==========================================
-// RECIPE SHARE BUTTON & SOCIAL MEDIA MENU
-// ==========================================
-const shareUrl = "https://s3.glbimg.com/v1/AUTH_e03f7a1106bb438e970511f892f07c35/receitas/2026/pagina-especial-receitas-copa/index.html";
-
-function getShareMessage() {
-  const country = document.getElementById('countryName').textContent;
-  const dish = document.getElementById('recipeDish').textContent;
-  return `Confira a receita tradicional de *${dish}* do *${country}* na Copa dos Sabores! 🏆🥘 Veja mais aqui: ${shareUrl}`;
-}
-
-function copyTextToClipboard(text, successCallback) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(successCallback)
-      .catch(err => console.error('Erro ao copiar: ', err));
-  } else {
-    // Fallback using document.execCommand
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.opacity = '0';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      successCallback();
-    } catch (err) {
-      console.error('Fallback error during copy:', err);
-    }
-    document.body.removeChild(textArea);
-  }
-}
-
-const shareBtn = document.getElementById('shareRecipeBtn');
-const shareMenu = document.getElementById('shareMenu');
-const shareWA = document.getElementById('shareWA');
-const shareTW = document.getElementById('shareTW');
-const shareIG = document.getElementById('shareIG');
-const shareCopy = document.getElementById('shareCopy');
-
-if (shareWA) {
-  shareWA.addEventListener('click', () => {
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(getShareMessage())}`;
-    window.open(url, '_blank');
-    shareMenu.classList.add('hidden');
-  });
-}
-
-if (shareTW) {
-  shareTW.addEventListener('click', () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareMessage())}`;
-    window.open(url, '_blank');
-    shareMenu.classList.add('hidden');
-  });
-}
-
-if (shareIG) {
-  shareIG.addEventListener('click', () => {
-    const shareText = getShareMessage();
-    copyTextToClipboard(shareText, () => {
-      const span = shareIG.querySelector('span');
-      const originalText = span.textContent;
-      span.textContent = 'Copiado no IG! 📸';
-      setTimeout(() => {
-        span.textContent = originalText;
-        shareMenu.classList.add('hidden');
-      }, 2000);
-    });
-  });
-}
-
-if (shareCopy) {
-  shareCopy.addEventListener('click', () => {
-    copyTextToClipboard(shareUrl, () => {
-      const span = shareCopy.querySelector('span');
-      const originalText = span.textContent;
-      span.textContent = 'Link Copiado! ✓';
-      setTimeout(() => {
-        span.textContent = originalText;
-        shareMenu.classList.add('hidden');
-      }, 2000);
-    });
-  });
-}
-
-// Robust global click listener to toggle and close sharing dropdown
-window.addEventListener('click', (e) => {
-  if (!shareMenu) return;
-  
-  if (shareBtn && shareBtn.contains(e.target)) {
-    // Clicked the share button or its children (SVG, Span, etc.)
-    shareMenu.classList.toggle('hidden');
-  } else if (!shareMenu.contains(e.target)) {
-    // Clicked outside both the share button and the menu -> close it
-    shareMenu.classList.add('hidden');
-  }
 });
