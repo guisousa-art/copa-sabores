@@ -70,6 +70,85 @@ const countryIsoOverrides = {
   Wales: 'GB-WLS',
   'Northern Ireland': 'GB-NIR'
 };
+const PARTICIPATING_ALTITUDE = 0.018;
+const NON_PARTICIPATING_ALTITUDE = 0.01;
+const PARTICIPATING_CAP_COLOR = '#a5147d';
+const NON_PARTICIPATING_CAP_COLOR = '#5a2864';
+const PARTICIPATING_SIDE_COLOR = '#5a2864';
+const NON_PARTICIPATING_SIDE_COLOR = 'rgba(90, 40, 100, 0.48)';
+const PARTICIPATING_STROKE_COLOR = '#5a2864';
+const NON_PARTICIPATING_STROKE_COLOR = 'rgba(165, 20, 125, 0.3)';
+const COUNTRY_GEOMETRY_SCALE = 0.9875;
+
+function getBasePolygonAltitude(d) {
+  return isParticipating(d) ? PARTICIPATING_ALTITUDE : NON_PARTICIPATING_ALTITUDE;
+}
+
+function getBasePolygonCapColor(d) {
+  return isParticipating(d) ? PARTICIPATING_CAP_COLOR : NON_PARTICIPATING_CAP_COLOR;
+}
+
+function getBasePolygonSideColor(d) {
+  return isParticipating(d) ? PARTICIPATING_SIDE_COLOR : NON_PARTICIPATING_SIDE_COLOR;
+}
+
+function getBasePolygonStrokeColor(d) {
+  return isParticipating(d) ? PARTICIPATING_STROKE_COLOR : NON_PARTICIPATING_STROKE_COLOR;
+}
+
+function getRingCenter(ring) {
+  const center = ring.reduce((acc, [lng, lat]) => {
+    acc.lng += lng;
+    acc.lat += lat;
+    return acc;
+  }, { lng: 0, lat: 0 });
+
+  return {
+    lng: center.lng / ring.length,
+    lat: center.lat / ring.length
+  };
+}
+
+function scaleRingFromCenter(ring, center) {
+  return ring.map(([lng, lat]) => [
+    center.lng + ((lng - center.lng) * COUNTRY_GEOMETRY_SCALE),
+    center.lat + ((lat - center.lat) * COUNTRY_GEOMETRY_SCALE)
+  ]);
+}
+
+function scalePolygonCoordinates(polygon) {
+  const exteriorRing = polygon[0];
+  if (!exteriorRing || exteriorRing.length < 3) return polygon;
+
+  const center = getRingCenter(exteriorRing);
+  return polygon.map(ring => scaleRingFromCenter(ring, center));
+}
+
+function scaleCountryGeometry(feature) {
+  if (COUNTRY_GEOMETRY_SCALE === 1 || !feature.geometry) return feature;
+
+  if (feature.geometry.type === 'Polygon') {
+    return {
+      ...feature,
+      geometry: {
+        ...feature.geometry,
+        coordinates: scalePolygonCoordinates(feature.geometry.coordinates)
+      }
+    };
+  }
+
+  if (feature.geometry.type === 'MultiPolygon') {
+    return {
+      ...feature,
+      geometry: {
+        ...feature.geometry,
+        coordinates: feature.geometry.coordinates.map(scalePolygonCoordinates)
+      }
+    };
+  }
+
+  return feature;
+}
 
 // Bulletproof CSV Parser to handle comma-delimited fields, quotes, and newlines
 function parseCSV(csvText) {
@@ -260,10 +339,10 @@ function resetHoverStyles() {
   }
 
   world
-    .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
-    .polygonCapColor(d => isParticipating(d) ? '#a5147d' : '#5a2864')
-    .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
-    .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40');
+    .polygonAltitude(getBasePolygonAltitude)
+    .polygonCapColor(getBasePolygonCapColor)
+    .polygonSideColor(getBasePolygonSideColor)
+    .polygonStrokeColor(getBasePolygonStrokeColor);
 }
 
 // Setup Globe
@@ -272,10 +351,11 @@ const world = Globe()
   .backgroundColor('rgba(0, 0, 0, 0)')
   .atmosphereColor('#008c9b')
   .atmosphereAltitude(0.2)
-  .polygonAltitude(d => isParticipating(d) ? 0.01 : 0.002)
-  .polygonCapColor(d => isParticipating(d) ? '#a5147d' : '#5a2864') // participating vs muted red for other lands
-  .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
-  .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40') // yellow borders (#ffc800)
+  .polygonsTransitionDuration(0)
+  .polygonAltitude(getBasePolygonAltitude)
+  .polygonCapColor(getBasePolygonCapColor)
+  .polygonSideColor(getBasePolygonSideColor)
+  .polygonStrokeColor(getBasePolygonStrokeColor)
   .polygonLabel(({ properties: d }) => {
     if (isTouchLikeDevice()) return '';
 
@@ -327,10 +407,10 @@ const world = Globe()
         autoRotatePausedByHover = true;
       }
       world
-        .polygonAltitude(d => d.properties.ADMIN === hoveredCountryName ? getHoverAltitude(hoverD) : (isParticipating(d) ? 0.01 : 0.002))
-        .polygonCapColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : (isParticipating(d) ? '#a5147d' : '#5a2864'))
-        .polygonSideColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : (isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)'))
-        .polygonStrokeColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffffff' : (isParticipating(d) ? '#f0739b' : '#a5147d40'));
+        .polygonAltitude(d => d.properties.ADMIN === hoveredCountryName ? getHoverAltitude(hoverD) : getBasePolygonAltitude(d))
+        .polygonCapColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : getBasePolygonCapColor(d))
+        .polygonSideColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : getBasePolygonSideColor(d))
+        .polygonStrokeColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffffff' : getBasePolygonStrokeColor(d));
     } else {
       hoveredPolygon = null;
       hoveredCountryName = null;
@@ -471,7 +551,9 @@ Promise.all([
   recipesPromise
 ])
   .then(([countries]) => {
-    const mapFeatures = countries.features.map(normalizeMapFeature);
+    const mapFeatures = countries.features
+      .map(normalizeMapFeature)
+      .map(scaleCountryGeometry);
 
     // Render all countries so outlines cover the entire globe
     world.polygonsData(mapFeatures);
