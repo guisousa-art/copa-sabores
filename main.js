@@ -223,6 +223,26 @@ function getHoverAltitude(feature) {
   return 0.035;
 }
 
+function normalizeMapFeature(feature) {
+  const ukSubunitNames = new Set(['England', 'Scotland', 'Wales', 'Northern Ireland']);
+  const name = feature.properties.GEOUNIT || feature.properties.NAME;
+
+  if (feature.properties.ADMIN === 'United Kingdom' && ukSubunitNames.has(name)) {
+    return {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        ADMIN: name,
+        NAME: name,
+        NAME_LONG: name,
+        ISO_A2: countryIsoOverrides[name] || feature.properties.ISO_A2
+      }
+    };
+  }
+
+  return feature;
+}
+
 function resetHoverStyles() {
   const container = document.getElementById('globeViz');
   if (container) {
@@ -239,28 +259,6 @@ function resetHoverStyles() {
     .polygonCapColor(d => isParticipating(d) ? '#a5147d' : '#5a2864')
     .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
     .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40');
-}
-
-function combineCountryFeatures(features) {
-  const firstFeature = features[0];
-  const coordinates = [];
-
-  features.forEach(feature => {
-    if (feature.geometry.type === 'Polygon') {
-      coordinates.push(feature.geometry.coordinates);
-    } else if (feature.geometry.type === 'MultiPolygon') {
-      coordinates.push(...feature.geometry.coordinates);
-    }
-  });
-
-  return {
-    type: 'Feature',
-    properties: firstFeature.properties,
-    geometry: {
-      type: 'MultiPolygon',
-      coordinates
-    }
-  };
 }
 
 // Setup Globe
@@ -454,14 +452,10 @@ const recipesPromise = loadRecipesFromSheet();
 // Load GeoJSON data for countries and sheet recipes in parallel
 Promise.all([
   fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
-  fetch('./assets/uk_subdivisions.geojson').then(res => res.json()),
   recipesPromise
 ])
-  .then(([countries, ukSubdivisions]) => {
-    // Replace the single UK country polygon with separate UK subdivision polygons.
-    const mapFeatures = countries.features
-      .filter(feature => feature.properties.ADMIN !== 'United Kingdom')
-      .concat(ukSubdivisions.features);
+  .then(([countries]) => {
+    const mapFeatures = countries.features.map(normalizeMapFeature);
 
     // Render all countries so outlines cover the entire globe
     world.polygonsData(mapFeatures);
@@ -705,9 +699,7 @@ function initializeCountrySearch(features) {
 
   const participatingFeatures = Array.from(featureGroups.entries())
     .map(([countryName, countryFeatures]) => {
-      const feature = countryFeatures.length > 1
-        ? combineCountryFeatures(countryFeatures)
-        : countryFeatures[0];
+      const feature = countryFeatures[0];
 
       return {
         feature,
