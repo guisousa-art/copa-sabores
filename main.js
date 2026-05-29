@@ -31,8 +31,9 @@ const isParticipating = (d) => {
 
 function getCountryIsoA2(d) {
   if (!d) return '';
+  if (countryIsoOverrides[d.ADMIN]) return countryIsoOverrides[d.ADMIN];
   if (d.ISO_A2 && d.ISO_A2 !== '-99') return d.ISO_A2;
-  return countryIsoOverrides[d.ADMIN] || '';
+  return '';
 }
 
 function getFlagUrl(d) {
