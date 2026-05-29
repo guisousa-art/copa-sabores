@@ -202,6 +202,10 @@ let hoveredCountryName = null;
 let autoRotatePausedByHover = false;
 let hoverResetTimeout = null;
 
+function isTouchLikeDevice() {
+  return window.matchMedia('(hover: none), (pointer: coarse)').matches || window.innerWidth <= 768;
+}
+
 function getDefaultGlobeView() {
   const isMobile = window.innerWidth <= 480;
   return {
@@ -273,6 +277,8 @@ const world = Globe()
   .polygonSideColor(d => isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)')
   .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40') // yellow borders (#ffc800)
   .polygonLabel(({ properties: d }) => {
+    if (isTouchLikeDevice()) return '';
+
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
     const titles = worldCupTitles[d.ADMIN] || 0;
@@ -295,6 +301,15 @@ const world = Globe()
     </div>
   `})
   .onPolygonHover(hoverD => {
+    if (isTouchLikeDevice()) {
+      if (hoveredPolygon || hoveredCountryName || autoRotatePausedByHover) {
+        hoveredPolygon = null;
+        hoveredCountryName = null;
+        resetHoverStyles();
+      }
+      return;
+    }
+
     if (hoverResetTimeout && hoverD) {
       window.clearTimeout(hoverResetTimeout);
       hoverResetTimeout = null;

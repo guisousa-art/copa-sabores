@@ -1033,9 +1033,11 @@ p {
 
   /* Shift globe up on mobile to prevent bottom control overlap */
   #globeViz {
-    transform: translateY(-40px);
+    height: calc(100vh + 40px);
+    margin-top: -40px;
+    transform: none;
     touch-action: pan-y;
-    transition: transform 0.3s ease;
+    cursor: default;
   }
 
   /* Stack globe controls perfectly above the bottom search container using bulletproof viewport centering */
