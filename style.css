@@ -41,6 +41,7 @@
   --font-subtitle: 'Gopher', sans-serif;
   --font-cta: 'Gopher', sans-serif;
   --font-body: 'Globo Tx', sans-serif;
+  --desktop-globe-offset-x: 5vw;
 }
 
 * {
@@ -116,6 +117,7 @@ p {
   cursor: grab;
   touch-action: none;
   opacity: 0;
+  transform: translateX(var(--desktop-globe-offset-x));
   transition: opacity 0.8s ease-in-out;
   /* Lock touch scrolling on the globe to prevent buggy embedding behaviors */
 }
@@ -126,6 +128,48 @@ p {
 
 #globeViz:active {
   cursor: grabbing;
+}
+
+.rotation-mode-toggle {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 30;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(40, 205, 210, 0.25);
+  box-shadow: var(--glass-shadow);
+  pointer-events: auto;
+}
+
+.rotation-mode-btn {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d7d7d7;
+  cursor: pointer;
+  font-family: var(--font-subtitle);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 8px 10px;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.rotation-mode-btn.is-active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #07110f;
+}
+
+.rotation-mode-btn:hover {
+  border-color: rgba(255, 200, 0, 0.7);
 }
 
 /* Modal and Glassmorphism */
@@ -297,7 +341,7 @@ p {
 .globe-controls {
   position: absolute;
   bottom: 5%;
-  left: 50%;
+  left: calc(50% + var(--desktop-globe-offset-x));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -990,6 +1034,7 @@ p {
   /* Shift globe up on mobile to prevent bottom control overlap */
   #globeViz {
     transform: translateY(-40px);
+    touch-action: pan-y;
     transition: transform 0.3s ease;
   }
 

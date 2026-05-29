@@ -1,13 +1,14 @@
 import { recipesData } from './data.js';
 
-// Participating Teams in the World Cup
+// Participating teams represented by the current world map plus the UK subdivision overlay.
+// Cape Verde and Curaçao are not present in the current map files.
 const worldCupTeams = [
   "Canada", "United States of America", "Mexico",
   "Australia", "Saudi Arabia", "Qatar", "South Korea", "Iran", "Iraq", "Japan", "Jordan", "Uzbekistan",
   "South Africa", "Algeria", "Ivory Coast", "Egypt", "Ghana", "Morocco", "Democratic Republic of the Congo", "Senegal", "Tunisia",
   "Argentina", "Brazil", "Colombia", "Ecuador", "Paraguay", "Uruguay",
   "New Zealand",
-  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "United Kingdom", "Italy",
+  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "England", "Scotland",
   "Haiti", "Panama"
 ];
 
@@ -20,13 +21,24 @@ const worldCupTitles = {
   "France": 2,
   "Uruguay": 2,
   "Spain": 1,
-  "United Kingdom": 1 // England
+  "England": 1
 };
 
 const isParticipating = (d) => {
   if (!d || !d.properties) return false;
   return worldCupTeams.includes(d.properties.ADMIN);
 };
+
+function getCountryIsoA2(d) {
+  if (!d) return '';
+  if (d.ISO_A2 && d.ISO_A2 !== '-99') return d.ISO_A2;
+  return countryIsoOverrides[d.ADMIN] || '';
+}
+
+function getFlagUrl(d) {
+  const isoCode = getCountryIsoA2(d);
+  return isoCode ? `https://flagcdn.com/w80/${isoCode.toLowerCase()}.png` : '';
+}
 
 // ==========================================
 // GOOGLE SHEETS INTEGRATION CONFIGURATION
@@ -39,7 +51,6 @@ const sheetCountryMap = {
   "México": "Mexico",
   "Japão": "Japan",
   "França": "France",
-  "Itália": "Italy",
   "Alemanha": "Germany",
   "Marrocos": "Morocco"
 };
@@ -49,6 +60,15 @@ const initialGlobeLat = 8;
 const originalGlobeLng = -51.925;
 const initialGlobeRotationOffset = -10;
 const initialGlobeLng = originalGlobeLng + initialGlobeRotationOffset;
+let rotationControlMode = 'edge-hold';
+const EDGE_HOLD_SPIN_DEGREES_PER_SECOND = 70;
+const countryIsoOverrides = {
+  France: 'FR',
+  England: 'GB-ENG',
+  Scotland: 'GB-SCT',
+  Wales: 'GB-WLS',
+  'Northern Ireland': 'GB-NIR'
+};
 
 // Bulletproof CSV Parser to handle comma-delimited fields, quotes, and newlines
 function parseCSV(csvText) {
@@ -177,6 +197,7 @@ const recipeDishEl = document.getElementById('recipeDish');
 const recipeDescEl = document.getElementById('recipeDesc');
 const recipeImageEl = document.getElementById('recipeImage');
 let hoveredPolygon = null;
+let hoveredCountryName = null;
 let autoRotatePausedByHover = false;
 let hoverResetTimeout = null;
 
@@ -220,6 +241,28 @@ function resetHoverStyles() {
     .polygonStrokeColor(d => isParticipating(d) ? '#f0739b' : '#a5147d40');
 }
 
+function combineCountryFeatures(features) {
+  const firstFeature = features[0];
+  const coordinates = [];
+
+  features.forEach(feature => {
+    if (feature.geometry.type === 'Polygon') {
+      coordinates.push(feature.geometry.coordinates);
+    } else if (feature.geometry.type === 'MultiPolygon') {
+      coordinates.push(...feature.geometry.coordinates);
+    }
+  });
+
+  return {
+    type: 'Feature',
+    properties: firstFeature.properties,
+    geometry: {
+      type: 'MultiPolygon',
+      coordinates
+    }
+  };
+}
+
 // Setup Globe
 const world = Globe()
   (document.getElementById('globeViz'))
@@ -234,8 +277,9 @@ const world = Globe()
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
     const titles = worldCupTitles[d.ADMIN] || 0;
-    const flagHtml = d.ISO_A2 && d.ISO_A2 !== '-99'
-      ? `<img src="https://flagcdn.com/w80/${d.ISO_A2.toLowerCase()}.png" style="width: 22px; height: 22px; object-fit: cover; border-radius: 4px; border: 1px solid #ffc800; display: inline-block;" alt="flag">`
+    const flagUrl = getFlagUrl(d);
+    const flagHtml = flagUrl
+      ? `<img src="${flagUrl}" style="width: 22px; height: 22px; object-fit: cover; border-radius: 4px; border: 1px solid #ffc800; display: inline-block;" alt="flag">`
       : '';
     const titlesHtml = participating
       ? `<div style="font-size: 0.8rem; margin-top: 4px; color: ${titles > 0 ? '#ffc800' : '#aaa'}; display: flex; align-items: center; gap: 4px;">
@@ -262,18 +306,20 @@ const world = Globe()
     const container = document.getElementById('globeViz');
     if (hoverD && isParticipating(hoverD)) {
       hoveredPolygon = hoverD;
+      hoveredCountryName = hoverD.properties.ADMIN;
       container.style.cursor = 'pointer';
       if (world.controls().autoRotate) {
         world.controls().autoRotate = false;
         autoRotatePausedByHover = true;
       }
       world
-        .polygonAltitude(d => d === hoverD ? getHoverAltitude(hoverD) : (isParticipating(d) ? 0.01 : 0.002))
-        .polygonCapColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#a5147d' : '#5a2864'))
-        .polygonSideColor(d => d === hoverD ? '#ffc800' : (isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)'))
-        .polygonStrokeColor(d => d === hoverD ? '#ffffff' : (isParticipating(d) ? '#f0739b' : '#a5147d40'));
+        .polygonAltitude(d => d.properties.ADMIN === hoveredCountryName ? getHoverAltitude(hoverD) : (isParticipating(d) ? 0.01 : 0.002))
+        .polygonCapColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : (isParticipating(d) ? '#a5147d' : '#5a2864'))
+        .polygonSideColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffc800' : (isParticipating(d) ? '#5a2864' : 'rgba(0, 0, 0, 0)'))
+        .polygonStrokeColor(d => d.properties.ADMIN === hoveredCountryName ? '#ffffff' : (isParticipating(d) ? '#f0739b' : '#a5147d40'));
     } else {
       hoveredPolygon = null;
+      hoveredCountryName = null;
       hoverResetTimeout = window.setTimeout(() => {
         hoverResetTimeout = null;
         resetHoverStyles();
@@ -318,7 +364,7 @@ const world = Globe()
       // Open the modal after a short delay so the user experiences the globe's visual pan transition
       if (recipe) {
         setTimeout(() => {
-          openModal(ptName, recipe, d.properties.ISO_A2, countryName);
+          openModal(ptName, recipe, getCountryIsoA2(d.properties), countryName);
         }, 300);
       } else {
         setTimeout(() => {
@@ -326,7 +372,7 @@ const world = Globe()
             dish: "Iguarias Locais",
             description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
             image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
-          }, d.properties.ISO_A2, countryName);
+          }, getCountryIsoA2(d.properties), countryName);
         }, 300);
       }
     }
@@ -345,6 +391,10 @@ function getCountryNamePT(d) {
     } catch (e) { }
   }
   const fallbacks = {
+    "England": "Inglaterra",
+    "Scotland": "Escócia",
+    "Wales": "País de Gales",
+    "Northern Ireland": "Irlanda do Norte",
     "France": "França",
     "Norway": "Noruega",
     "Somaliland": "Somalilândia",
@@ -404,14 +454,20 @@ const recipesPromise = loadRecipesFromSheet();
 // Load GeoJSON data for countries and sheet recipes in parallel
 Promise.all([
   fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
+  fetch('./assets/uk_subdivisions.geojson').then(res => res.json()),
   recipesPromise
 ])
-  .then(([countries]) => {
+  .then(([countries, ukSubdivisions]) => {
+    // Replace the single UK country polygon with separate UK subdivision polygons.
+    const mapFeatures = countries.features
+      .filter(feature => feature.properties.ADMIN !== 'United Kingdom')
+      .concat(ukSubdivisions.features);
+
     // Render all countries so outlines cover the entire globe
-    world.polygonsData(countries.features);
+    world.polygonsData(mapFeatures);
 
     // Initialize the glassmorphic search panel with country rows
-    initializeCountrySearch(countries.features);
+    initializeCountrySearch(mapFeatures);
 
     // Setup Auto-rotation
     world.controls().autoRotate = true;
@@ -425,21 +481,83 @@ Promise.all([
     const zoomOutBtn = document.getElementById('zoomOut');
     const rotationDragControl = document.getElementById('rotationDragControl');
     const rotationDragThumb = document.getElementById('rotationDragThumb');
+    const rotationModeButtons = document.querySelectorAll('[data-rotation-mode]');
+
+    rotationModeButtons.forEach(button => {
+      button.classList.toggle('is-active', button.dataset.rotationMode === rotationControlMode);
+      button.addEventListener('click', () => {
+        rotationControlMode = button.dataset.rotationMode || 'edge-hold';
+        rotationModeButtons.forEach(item => {
+          item.classList.toggle('is-active', item === button);
+        });
+      });
+    });
 
     // Handle spring-back drag rotation without enabling native globe gestures in embeds
     let isDraggingRotation = false;
     let dragStartX = 0;
     let dragStartLng = 0;
     let trackWidth = 1;
+    let edgeSpinFrame = null;
+    let edgeSpinDirection = 0;
+    let lastEdgeSpinTime = 0;
+
+    function getRotationMaxOffset() {
+      return Math.max(28, (trackWidth / 2) - 14);
+    }
+
+    function stopEdgeSpin() {
+      edgeSpinDirection = 0;
+      lastEdgeSpinTime = 0;
+      if (edgeSpinFrame) {
+        window.cancelAnimationFrame(edgeSpinFrame);
+        edgeSpinFrame = null;
+      }
+    }
+
+    function runEdgeSpin(timestamp) {
+      if (!isDraggingRotation || !edgeSpinDirection) {
+        stopEdgeSpin();
+        return;
+      }
+
+      if (!lastEdgeSpinTime) {
+        lastEdgeSpinTime = timestamp;
+      }
+
+      const elapsed = Math.min(64, timestamp - lastEdgeSpinTime);
+      lastEdgeSpinTime = timestamp;
+      const spinDelta = edgeSpinDirection * EDGE_HOLD_SPIN_DEGREES_PER_SECOND * (elapsed / 1000);
+      const currentPOV = world.pointOfView();
+
+      dragStartLng += spinDelta;
+      world.pointOfView({
+        lat: currentPOV.lat,
+        lng: currentPOV.lng + spinDelta,
+        altitude: currentPOV.altitude
+      }, 0);
+
+      edgeSpinFrame = window.requestAnimationFrame(runEdgeSpin);
+    }
+
+    function startEdgeSpin(direction) {
+      if (rotationControlMode !== 'edge-hold') return;
+      if (edgeSpinDirection === direction && edgeSpinFrame) return;
+
+      stopEdgeSpin();
+      edgeSpinDirection = direction;
+      edgeSpinFrame = window.requestAnimationFrame(runEdgeSpin);
+    }
 
     function setRotationThumb(deltaX) {
       if (!rotationDragThumb) return;
-      const maxOffset = Math.max(28, (trackWidth / 2) - 14);
+      const maxOffset = getRotationMaxOffset();
       const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, deltaX));
       rotationDragThumb.style.transform = `translate(-50%, -50%) translateX(${clampedOffset}px)`;
       if (rotationDragControl) {
         rotationDragControl.setAttribute('aria-valuenow', String(Math.round((clampedOffset / maxOffset) * 100)));
       }
+      return { clampedOffset, maxOffset };
     }
 
     function resetRotationThumb() {
@@ -457,18 +575,28 @@ Promise.all([
     function moveRotation(clientX) {
       const deltaX = clientX - dragStartX;
       const currentPOV = world.pointOfView();
-      const degreesPerPixel = 180 / Math.max(trackWidth, 1);
+      const { clampedOffset, maxOffset } = setRotationThumb(deltaX);
+      const rotationDelta = rotationControlMode === 'drag-360'
+        ? clampedOffset * (360 / maxOffset)
+        : clampedOffset * (180 / Math.max(trackWidth, 1));
+
       world.pointOfView({
         lat: currentPOV.lat,
-        lng: dragStartLng + (deltaX * degreesPerPixel),
+        lng: dragStartLng + rotationDelta,
         altitude: currentPOV.altitude
       }, 0);
-      setRotationThumb(deltaX);
+
+      if (Math.abs(clampedOffset) >= maxOffset - 0.5 && rotationControlMode === 'edge-hold') {
+        startEdgeSpin(clampedOffset > 0 ? 1 : -1);
+      } else {
+        stopEdgeSpin();
+      }
     }
 
     function stopRotationDrag() {
       if (!isDraggingRotation) return;
       isDraggingRotation = false;
+      stopEdgeSpin();
       resetRotationThumb();
       world.controls().autoRotate = true;
       window.removeEventListener('pointermove', onRotationPointerMove);
@@ -564,14 +692,28 @@ function initializeCountrySearch(features) {
   const listEl = document.getElementById('countryList');
   const searchInput = document.getElementById('countrySearch');
   
-  const participatingFeatures = features
+  const featureGroups = features
     .filter(f => isParticipating(f))
-    .map(f => {
+    .reduce((groups, feature) => {
+      const countryName = feature.properties.ADMIN;
+      if (!groups.has(countryName)) {
+        groups.set(countryName, []);
+      }
+      groups.get(countryName).push(feature);
+      return groups;
+    }, new Map());
+
+  const participatingFeatures = Array.from(featureGroups.entries())
+    .map(([countryName, countryFeatures]) => {
+      const feature = countryFeatures.length > 1
+        ? combineCountryFeatures(countryFeatures)
+        : countryFeatures[0];
+
       return {
-        feature: f,
-        namePT: getCountryNamePT(f.properties),
-        nameEN: f.properties.ADMIN,
-        isoCode: f.properties.ISO_A2
+        feature,
+        namePT: getCountryNamePT(feature.properties),
+        nameEN: countryName,
+        isoCode: getCountryIsoA2(feature.properties)
       };
     });
   
@@ -586,9 +728,7 @@ function initializeCountrySearch(features) {
       const li = document.createElement('li');
       li.className = 'country-item';
       
-      const flagUrl = item.isoCode && item.isoCode !== '-99'
-        ? `https://flagcdn.com/w80/${item.isoCode.toLowerCase()}.png`
-        : '';
+      const flagUrl = getFlagUrl(item.feature.properties);
         
       const flagHtml = flagUrl
         ? `<img src="${flagUrl}" class="search-flag" alt="${item.namePT} flag">`
@@ -642,7 +782,7 @@ function initializeCountrySearch(features) {
         
         if (recipe) {
           setTimeout(() => {
-            openModal(ptName, recipe, d.properties.ISO_A2, countryName);
+            openModal(ptName, recipe, getCountryIsoA2(d.properties), countryName);
           }, 300);
         } else {
           setTimeout(() => {
@@ -650,7 +790,7 @@ function initializeCountrySearch(features) {
               dish: "Iguarias Locais",
               description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
               image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
-            }, d.properties.ISO_A2, countryName);
+            }, getCountryIsoA2(d.properties), countryName);
           }, 300);
         }
       });
