@@ -285,58 +285,39 @@ function shouldDisableHoverEffects() {
   return window.innerWidth <= 768 || !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
-function setupGlobeVerticalScrollPassthrough(container) {
+function setupMobileGlobeTouchFilter(container) {
   if (!container) return;
 
   let startX = 0;
   let startY = 0;
-  let lastY = 0;
-  let verticalScrollIntent = false;
+  let movedDuringTouch = false;
 
   function resetGesture(clientX, clientY) {
     startX = clientX;
     startY = clientY;
-    lastY = clientY;
-    verticalScrollIntent = false;
+    movedDuringTouch = false;
   }
 
-  function shouldPassVerticalGesture(clientX, clientY) {
+  function isTouchDrag(clientX, clientY) {
     const deltaX = Math.abs(clientX - startX);
     const deltaY = Math.abs(clientY - startY);
-
-    if (deltaY > 8 && deltaY > deltaX * 1.2) {
-      verticalScrollIntent = true;
-    }
-
-    return verticalScrollIntent;
+    return deltaX > 8 || deltaY > 8;
   }
 
-  function scrollPageBy(deltaY) {
-    window.scrollBy(0, deltaY);
+  function blockTouchDragFromGlobe(e, clientX, clientY) {
+    if (!isTouchDrag(clientX, clientY)) return;
 
-    if (window.parent && window.parent !== window) {
-      try {
-        window.parent.scrollBy(0, deltaY);
-      } catch (err) {
-        // Cross-origin embeds may block direct parent scrolling.
-      }
-    }
+    movedDuringTouch = true;
+    e.stopImmediatePropagation();
   }
 
-  function handleVerticalScrollGesture(e, clientX, clientY) {
-    if (!shouldPassVerticalGesture(clientX, clientY)) return;
-
-    const scrollDelta = lastY - clientY;
-    lastY = clientY;
+  function blockSyntheticClickAfterDrag(e) {
+    if (!movedDuringTouch) return;
 
     if (e.cancelable) {
       e.preventDefault();
     }
     e.stopImmediatePropagation();
-
-    if (scrollDelta) {
-      scrollPageBy(scrollDelta);
-    }
   }
 
   container.addEventListener('pointerdown', (e) => {
@@ -347,9 +328,15 @@ function setupGlobeVerticalScrollPassthrough(container) {
 
   container.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') {
-      handleVerticalScrollGesture(e, e.clientX, e.clientY);
+      blockTouchDragFromGlobe(e, e.clientX, e.clientY);
     }
-  }, { capture: true, passive: false });
+  }, { capture: true, passive: true });
+
+  container.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') {
+      blockSyntheticClickAfterDrag(e);
+    }
+  }, { capture: true });
 
   container.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
@@ -361,9 +348,11 @@ function setupGlobeVerticalScrollPassthrough(container) {
   container.addEventListener('touchmove', (e) => {
     const touch = e.touches[0];
     if (touch) {
-      handleVerticalScrollGesture(e, touch.clientX, touch.clientY);
+      blockTouchDragFromGlobe(e, touch.clientX, touch.clientY);
     }
-  }, { capture: true, passive: false });
+  }, { capture: true, passive: true });
+
+  container.addEventListener('click', blockSyntheticClickAfterDrag, { capture: true });
 }
 
 function getDefaultGlobeView() {
@@ -371,7 +360,7 @@ function getDefaultGlobeView() {
   return {
     lat: initialGlobeLat,
     lng: initialGlobeLng,
-    altitude: isMobile ? 5.84 : 2.5
+    altitude: isMobile ? 4.67 : 2.5
   };
 }
 
@@ -648,7 +637,11 @@ Promise.all([
     world.controls().enableZoom = false;   // Disable default scroll zoom
     world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
     world.controls().enablePan = false;    // Do not trap vertical page-scroll gestures
-    setupGlobeVerticalScrollPassthrough(document.getElementById('globeViz'));
+    if (window.innerWidth <= 768 && world.controls().touches) {
+      world.controls().touches.ONE = null;
+      world.controls().touches.TWO = null;
+    }
+    setupMobileGlobeTouchFilter(document.getElementById('globeViz'));
     setDefaultGlobeView(0);
 
     // Custom Globe Controls (Placed inside .then to ensure controls are initialized)
