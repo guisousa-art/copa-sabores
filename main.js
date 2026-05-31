@@ -61,7 +61,6 @@ const initialGlobeLat = 8;
 const originalGlobeLng = -51.925;
 const initialGlobeRotationOffset = -10;
 const initialGlobeLng = originalGlobeLng + initialGlobeRotationOffset;
-let rotationControlMode = 'edge-hold';
 const EDGE_HOLD_SPIN_DEGREES_PER_SECOND = 131.25;
 const countryIsoOverrides = {
   France: 'FR',
@@ -79,6 +78,7 @@ const NON_PARTICIPATING_SIDE_COLOR = 'rgba(90, 40, 100, 0.48)';
 const PARTICIPATING_STROKE_COLOR = '#5a2864';
 const NON_PARTICIPATING_STROKE_COLOR = 'rgba(165, 20, 125, 0.3)';
 const COUNTRY_GEOMETRY_SCALE = 0.9875;
+const HOVER_EXTRUSION_MULTIPLIER = 1.15;
 
 function getBasePolygonAltitude(d) {
   return isParticipating(d) ? PARTICIPATING_ALTITUDE : NON_PARTICIPATING_ALTITUDE;
@@ -281,8 +281,8 @@ let hoveredCountryName = null;
 let autoRotatePausedByHover = false;
 let hoverResetTimeout = null;
 
-function isTouchLikeDevice() {
-  return window.matchMedia('(hover: none), (pointer: coarse)').matches || window.innerWidth <= 768;
+function shouldDisableHoverEffects() {
+  return window.innerWidth <= 768 || !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
 function getDefaultGlobeView() {
@@ -301,10 +301,10 @@ function setDefaultGlobeView(duration = 0) {
 function getHoverAltitude(feature) {
   const { area } = getPolygonCenterAndArea(feature);
 
-  if (area < 15) return 0.07;
-  if (area < 80) return 0.055;
-  if (area < 400) return 0.045;
-  return 0.035;
+  if (area < 15) return 0.07 * HOVER_EXTRUSION_MULTIPLIER;
+  if (area < 80) return 0.055 * HOVER_EXTRUSION_MULTIPLIER;
+  if (area < 400) return 0.045 * HOVER_EXTRUSION_MULTIPLIER;
+  return 0.035 * HOVER_EXTRUSION_MULTIPLIER;
 }
 
 function normalizeMapFeature(feature) {
@@ -351,13 +351,13 @@ const world = Globe()
   .backgroundColor('rgba(0, 0, 0, 0)')
   .atmosphereColor('#008c9b')
   .atmosphereAltitude(0.2)
-  .polygonsTransitionDuration(0)
+  .polygonsTransitionDuration(520)
   .polygonAltitude(getBasePolygonAltitude)
   .polygonCapColor(getBasePolygonCapColor)
   .polygonSideColor(getBasePolygonSideColor)
   .polygonStrokeColor(getBasePolygonStrokeColor)
   .polygonLabel(({ properties: d }) => {
-    if (isTouchLikeDevice()) return '';
+    if (shouldDisableHoverEffects()) return '';
 
     const ptName = getCountryNamePT(d);
     const participating = worldCupTeams.includes(d.ADMIN);
@@ -381,7 +381,7 @@ const world = Globe()
     </div>
   `})
   .onPolygonHover(hoverD => {
-    if (isTouchLikeDevice()) {
+    if (shouldDisableHoverEffects()) {
       if (hoveredPolygon || hoveredCountryName || autoRotatePausedByHover) {
         hoveredPolygon = null;
         hoveredCountryName = null;
@@ -566,6 +566,7 @@ Promise.all([
     world.controls().autoRotateSpeed = 0.25; // Slow down by 50%
     world.controls().enableZoom = false;   // Disable default scroll zoom
     world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
+    world.controls().enablePan = false;    // Do not trap vertical page-scroll gestures
     setDefaultGlobeView(0);
 
     // Custom Globe Controls (Placed inside .then to ensure controls are initialized)
@@ -573,17 +574,6 @@ Promise.all([
     const zoomOutBtn = document.getElementById('zoomOut');
     const rotationDragControl = document.getElementById('rotationDragControl');
     const rotationDragThumb = document.getElementById('rotationDragThumb');
-    const rotationModeButtons = document.querySelectorAll('[data-rotation-mode]');
-
-    rotationModeButtons.forEach(button => {
-      button.classList.toggle('is-active', button.dataset.rotationMode === rotationControlMode);
-      button.addEventListener('click', () => {
-        rotationControlMode = button.dataset.rotationMode || 'edge-hold';
-        rotationModeButtons.forEach(item => {
-          item.classList.toggle('is-active', item === button);
-        });
-      });
-    });
 
     // Handle spring-back drag rotation without enabling native globe gestures in embeds
     let isDraggingRotation = false;
@@ -633,7 +623,6 @@ Promise.all([
     }
 
     function startEdgeSpin(direction) {
-      if (rotationControlMode !== 'edge-hold') return;
       if (edgeSpinDirection === direction && edgeSpinFrame) return;
 
       stopEdgeSpin();
@@ -668,9 +657,7 @@ Promise.all([
       const deltaX = clientX - dragStartX;
       const currentPOV = world.pointOfView();
       const { clampedOffset, maxOffset } = setRotationThumb(deltaX);
-      const rotationDelta = rotationControlMode === 'drag-360'
-        ? clampedOffset * (360 / maxOffset)
-        : clampedOffset * (180 / Math.max(trackWidth, 1));
+      const rotationDelta = clampedOffset * (180 / Math.max(trackWidth, 1));
 
       world.pointOfView({
         lat: currentPOV.lat,
@@ -678,7 +665,7 @@ Promise.all([
         altitude: currentPOV.altitude
       }, 0);
 
-      if (Math.abs(clampedOffset) >= maxOffset - 0.5 && rotationControlMode === 'edge-hold') {
+      if (Math.abs(clampedOffset) >= maxOffset - 0.5) {
         startEdgeSpin(clampedOffset > 0 ? 1 : -1);
       } else {
         stopEdgeSpin();
