@@ -285,12 +285,63 @@ function shouldDisableHoverEffects() {
   return window.innerWidth <= 768 || !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+function setupGlobeVerticalScrollPassthrough(container) {
+  if (!container) return;
+
+  let startX = 0;
+  let startY = 0;
+  let verticalScrollIntent = false;
+
+  function resetGesture(clientX, clientY) {
+    startX = clientX;
+    startY = clientY;
+    verticalScrollIntent = false;
+  }
+
+  function shouldPassVerticalGesture(clientX, clientY) {
+    const deltaX = Math.abs(clientX - startX);
+    const deltaY = Math.abs(clientY - startY);
+
+    if (deltaY > 8 && deltaY > deltaX * 1.2) {
+      verticalScrollIntent = true;
+    }
+
+    return verticalScrollIntent;
+  }
+
+  container.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') {
+      resetGesture(e.clientX, e.clientY);
+    }
+  }, { capture: true, passive: true });
+
+  container.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch' && shouldPassVerticalGesture(e.clientX, e.clientY)) {
+      e.stopImmediatePropagation();
+    }
+  }, { capture: true, passive: true });
+
+  container.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    if (touch) {
+      resetGesture(touch.clientX, touch.clientY);
+    }
+  }, { capture: true, passive: true });
+
+  container.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    if (touch && shouldPassVerticalGesture(touch.clientX, touch.clientY)) {
+      e.stopImmediatePropagation();
+    }
+  }, { capture: true, passive: true });
+}
+
 function getDefaultGlobeView() {
-  const isMobile = window.innerWidth <= 480;
+  const isMobile = window.innerWidth <= 768;
   return {
     lat: initialGlobeLat,
     lng: initialGlobeLng,
-    altitude: isMobile ? 3.65 : 2.5
+    altitude: isMobile ? 7.3 : 2.5
   };
 }
 
@@ -567,6 +618,7 @@ Promise.all([
     world.controls().enableZoom = false;   // Disable default scroll zoom
     world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
     world.controls().enablePan = false;    // Do not trap vertical page-scroll gestures
+    setupGlobeVerticalScrollPassthrough(document.getElementById('globeViz'));
     setDefaultGlobeView(0);
 
     // Custom Globe Controls (Placed inside .then to ensure controls are initialized)

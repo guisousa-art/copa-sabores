@@ -50,6 +50,10 @@
   padding: 0;
 }
 
+html {
+  overscroll-behavior-y: auto;
+}
+
 body {
   font-family: var(--font-body);
   background-color: #0d3026;
@@ -60,6 +64,8 @@ body {
   color: var(--text-color);
   overflow: hidden;
   /* Hide scrollbars for the 3D globe full screen effect */
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
 }
 
 header {
@@ -988,6 +994,10 @@ p {
   body {
     background-image: linear-gradient(rgba(3, 14, 11, 0.42), rgba(3, 14, 11, 0.58)), url('./assets/background_mob.png');
     background-position: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: calc(100dvh + 1px);
+    touch-action: pan-y;
   }
 
   /* Disable transform-based slideDown animation to prevent creating a containing block on mobile */
