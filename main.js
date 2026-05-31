@@ -290,11 +290,13 @@ function setupGlobeVerticalScrollPassthrough(container) {
 
   let startX = 0;
   let startY = 0;
+  let lastY = 0;
   let verticalScrollIntent = false;
 
   function resetGesture(clientX, clientY) {
     startX = clientX;
     startY = clientY;
+    lastY = clientY;
     verticalScrollIntent = false;
   }
 
@@ -309,6 +311,34 @@ function setupGlobeVerticalScrollPassthrough(container) {
     return verticalScrollIntent;
   }
 
+  function scrollPageBy(deltaY) {
+    window.scrollBy(0, deltaY);
+
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.scrollBy(0, deltaY);
+      } catch (err) {
+        // Cross-origin embeds may block direct parent scrolling.
+      }
+    }
+  }
+
+  function handleVerticalScrollGesture(e, clientX, clientY) {
+    if (!shouldPassVerticalGesture(clientX, clientY)) return;
+
+    const scrollDelta = lastY - clientY;
+    lastY = clientY;
+
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+    e.stopImmediatePropagation();
+
+    if (scrollDelta) {
+      scrollPageBy(scrollDelta);
+    }
+  }
+
   container.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'touch') {
       resetGesture(e.clientX, e.clientY);
@@ -316,10 +346,10 @@ function setupGlobeVerticalScrollPassthrough(container) {
   }, { capture: true, passive: true });
 
   container.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'touch' && shouldPassVerticalGesture(e.clientX, e.clientY)) {
-      e.stopImmediatePropagation();
+    if (e.pointerType === 'touch') {
+      handleVerticalScrollGesture(e, e.clientX, e.clientY);
     }
-  }, { capture: true, passive: true });
+  }, { capture: true, passive: false });
 
   container.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
@@ -330,10 +360,10 @@ function setupGlobeVerticalScrollPassthrough(container) {
 
   container.addEventListener('touchmove', (e) => {
     const touch = e.touches[0];
-    if (touch && shouldPassVerticalGesture(touch.clientX, touch.clientY)) {
-      e.stopImmediatePropagation();
+    if (touch) {
+      handleVerticalScrollGesture(e, touch.clientX, touch.clientY);
     }
-  }, { capture: true, passive: true });
+  }, { capture: true, passive: false });
 }
 
 function getDefaultGlobeView() {
@@ -341,7 +371,7 @@ function getDefaultGlobeView() {
   return {
     lat: initialGlobeLat,
     lng: initialGlobeLng,
-    altitude: isMobile ? 7.3 : 2.5
+    altitude: isMobile ? 5.84 : 2.5
   };
 }
 
