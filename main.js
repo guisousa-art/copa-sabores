@@ -62,7 +62,7 @@ const originalGlobeLng = -51.925;
 const initialGlobeRotationOffset = -10;
 const initialGlobeLng = originalGlobeLng + initialGlobeRotationOffset;
 let rotationControlMode = 'edge-hold';
-const EDGE_HOLD_SPIN_DEGREES_PER_SECOND = 105;
+const EDGE_HOLD_SPIN_DEGREES_PER_SECOND = 131.25;
 const countryIsoOverrides = {
   France: 'FR',
   England: 'GB-ENG',
