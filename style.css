@@ -43,8 +43,8 @@
   --font-body: 'Globo Tx', sans-serif;
   --desktop-content-left: clamp(56px, 8vw, 160px);
   --desktop-content-width: clamp(360px, 28vw, 460px);
-  --desktop-layout-gap: clamp(16px, 2.5vw, 40px);
-  --desktop-globe-offset-x: clamp(12px, 3vw, 56px);
+  --desktop-layout-gap: clamp(8px, 1vw, 16px);
+  --desktop-globe-offset-x: calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) - 50vw);
 }
 
 * {
@@ -592,11 +592,11 @@ p {
   }
 
   #globeViz {
-    transform: translateX(max(var(--desktop-globe-offset-x), calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) - 50vw)));
+    transform: translateX(var(--desktop-globe-offset-x));
   }
 
   .globe-controls {
-    left: calc(50% + max(var(--desktop-globe-offset-x), calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) - 50vw)));
+    left: calc(50% + var(--desktop-globe-offset-x));
   }
 
   h1 {
