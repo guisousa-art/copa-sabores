@@ -41,7 +41,10 @@
   --font-subtitle: 'Gopher', sans-serif;
   --font-cta: 'Gopher', sans-serif;
   --font-body: 'Globo Tx', sans-serif;
-  --desktop-globe-offset-x: 5vw;
+  --desktop-content-left: clamp(48px, 7vw, 136px);
+  --desktop-content-width: clamp(360px, 28vw, 460px);
+  --desktop-layout-gap: clamp(28px, 4vw, 72px);
+  --desktop-globe-offset-x: clamp(32px, 5vw, 96px);
 }
 
 * {
@@ -576,15 +579,24 @@ p {
 @media (min-width: 769px) {
   header {
     top: 20%;
-    left: 5%;
-    width: auto;
-    max-width: 460px;
+    left: var(--desktop-content-left);
+    width: var(--desktop-content-width);
+    max-width: var(--desktop-content-width);
     text-align: left;
     padding: 0;
   }
 
   .header-content {
     animation: slideRight 1s ease-out forwards;
+    max-width: 100%;
+  }
+
+  #globeViz {
+    transform: translateX(max(var(--desktop-globe-offset-x), calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) - 50vw)));
+  }
+
+  .globe-controls {
+    left: calc(50% + max(var(--desktop-globe-offset-x), calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) - 50vw)));
   }
 
   h1 {
