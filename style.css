@@ -41,7 +41,7 @@
   --font-subtitle: 'Gopher', sans-serif;
   --font-cta: 'Gopher', sans-serif;
   --font-body: 'Globo Tx', sans-serif;
-  --desktop-content-left: clamp(120px, 10vw, 220px);
+  --desktop-content-left: clamp(144px, 12vw, 264px);
   --desktop-content-width: clamp(360px, 28vw, 460px);
   --desktop-layout-gap: clamp(8px, 1vw, 16px);
   --desktop-globe-offset-x: clamp(32px, 5vw, 96px);
