@@ -44,7 +44,9 @@
   --desktop-content-left: clamp(144px, 12vw, 264px);
   --desktop-content-width: clamp(360px, 28vw, 460px);
   --desktop-layout-gap: clamp(8px, 1vw, 16px);
-  --desktop-globe-offset-x: clamp(32px, 5vw, 96px);
+  --desktop-globe-base-offset-x: clamp(32px, 5vw, 96px);
+  --desktop-globe-safe-radius: clamp(280px, 24vw, 420px);
+  --desktop-globe-offset-x: max(var(--desktop-globe-base-offset-x), calc(var(--desktop-content-left) + var(--desktop-content-width) + var(--desktop-layout-gap) + var(--desktop-globe-safe-radius) - 50vw));
 }
 
 * {
