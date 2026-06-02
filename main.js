@@ -1,4 +1,5 @@
 import { recipesData } from './data.js';
+import countriesGeoJsonUrl from './ne_110m_admin_0_countries.geojson?url';
 
 // Participating teams represented by the current world map plus the UK subdivision overlay.
 // Cape Verde and Curaçao are not present in the current map files.
@@ -298,14 +299,14 @@ function setupMobileGlobeTouchFilter(container) {
     movedDuringTouch = false;
   }
 
-  function isTouchDrag(clientX, clientY) {
+  function isHorizontalTouchDrag(clientX, clientY) {
     const deltaX = Math.abs(clientX - startX);
     const deltaY = Math.abs(clientY - startY);
-    return deltaX > 8 || deltaY > 8;
+    return deltaX > 8 && deltaX > deltaY;
   }
 
   function blockTouchDragFromGlobe(e, clientX, clientY) {
-    if (!isTouchDrag(clientX, clientY)) return;
+    if (!isHorizontalTouchDrag(clientX, clientY)) return;
 
     movedDuringTouch = true;
     e.stopImmediatePropagation();
@@ -353,6 +354,17 @@ function setupMobileGlobeTouchFilter(container) {
   }, { capture: true, passive: true });
 
   container.addEventListener('click', blockSyntheticClickAfterDrag, { capture: true });
+}
+
+function applyGlobeScrollTouchAction(container) {
+  if (!container) return;
+
+  container.style.touchAction = 'pan-y pinch-zoom';
+
+  const canvas = container.querySelector('canvas');
+  if (canvas) {
+    canvas.style.touchAction = 'pan-y pinch-zoom';
+  }
 }
 
 function getDefaultGlobeView() {
@@ -617,7 +629,7 @@ const recipesPromise = loadRecipesFromSheet();
 
 // Load GeoJSON data for countries and sheet recipes in parallel
 Promise.all([
-  fetch('./ne_110m_admin_0_countries.geojson').then(res => res.json()),
+  fetch(countriesGeoJsonUrl).then(res => res.json()),
   recipesPromise
 ])
   .then(([countries]) => {
@@ -641,7 +653,10 @@ Promise.all([
       world.controls().touches.ONE = null;
       world.controls().touches.TWO = null;
     }
-    setupMobileGlobeTouchFilter(document.getElementById('globeViz'));
+    const globeContainer = document.getElementById('globeViz');
+    applyGlobeScrollTouchAction(globeContainer);
+    setupMobileGlobeTouchFilter(globeContainer);
+    window.requestAnimationFrame(() => applyGlobeScrollTouchAction(globeContainer));
     setDefaultGlobeView(0);
 
     // Custom Globe Controls (Placed inside .then to ensure controls are initialized)
@@ -832,7 +847,6 @@ Promise.all([
 
     // Fade in the globe Viz after a minor rendering buffer delay (150ms) to ensure
     // the WebGL context compiles and renders the first frame cleanly without visual pops/flickers
-    const globeContainer = document.getElementById('globeViz');
     if (globeContainer) {
       setTimeout(() => {
         setDefaultGlobeView(0);
