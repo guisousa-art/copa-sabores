@@ -148,6 +148,20 @@ p {
   cursor: grabbing;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  body * {
+    cursor: url("./assets/mouse-icone.svg") 0 0, auto !important;
+  }
+
+  html:active,
+  body:active,
+  body:active * {
+    cursor: url("./assets/mouse-icone-click.svg") 0 0, auto !important;
+  }
+}
+
 /* Modal and Glassmorphism */
 .modal {
   position: fixed;
