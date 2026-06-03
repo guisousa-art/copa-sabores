@@ -1,17 +1,5 @@
-import { recipesData } from './data.js';
 import countriesGeoJsonUrl from './ne_110m_admin_0_countries.geojson?url';
-
-// Participating teams represented by the current world map plus the UK subdivision overlay.
-// Cape Verde and Curaçao are not present in the current map files.
-const worldCupTeams = [
-  "Canada", "United States of America", "Mexico",
-  "Australia", "Saudi Arabia", "Qatar", "South Korea", "Iran", "Iraq", "Japan", "Jordan", "Uzbekistan",
-  "South Africa", "Algeria", "Ivory Coast", "Egypt", "Ghana", "Morocco", "Democratic Republic of the Congo", "Senegal", "Tunisia",
-  "Argentina", "Brazil", "Colombia", "Ecuador", "Paraguay", "Uruguay",
-  "New Zealand",
-  "Germany", "Austria", "Belgium", "Bosnia and Herzegovina", "Croatia", "Spain", "France", "Netherlands", "Norway", "Portugal", "Czechia", "Sweden", "Switzerland", "Turkey", "England", "Scotland",
-  "Haiti", "Panama"
-];
+import recipesCsvUrl from './assets/paises-mapa.csv?url';
 
 // Number of World Cup titles won by country
 const worldCupTitles = {
@@ -25,9 +13,13 @@ const worldCupTitles = {
   "England": 1
 };
 
+function hasRecipeForCountry(countryName) {
+  return Boolean(countryName && fetchedRecipesData[countryName]);
+}
+
 const isParticipating = (d) => {
   if (!d || !d.properties) return false;
-  return worldCupTeams.includes(d.properties.ADMIN);
+  return hasRecipeForCountry(d.properties.ADMIN);
 };
 
 function getCountryIsoA2(d) {
@@ -42,22 +34,8 @@ function getFlagUrl(d) {
   return isoCode ? `https://flagcdn.com/w80/${isoCode.toLowerCase()}.png` : '';
 }
 
-// ==========================================
-// GOOGLE SHEETS INTEGRATION CONFIGURATION
-// ==========================================
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1JRHo8rWdp09LPfgZujFPoyCxeRee8uKKqgl9jWMfgk0/export?format=csv';
-
-const sheetCountryMap = {
-  "Brasil": "Brazil",
-  "Argentina": "Argentina",
-  "México": "Mexico",
-  "Japão": "Japan",
-  "França": "France",
-  "Alemanha": "Germany",
-  "Marrocos": "Morocco"
-};
-
 let fetchedRecipesData = {};
+const RECIPE_IMAGE_FALLBACK = "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop";
 const initialGlobeLat = 8;
 const originalGlobeLng = -51.925;
 const initialGlobeRotationOffset = -10;
@@ -151,7 +129,7 @@ function scaleCountryGeometry(feature) {
   return feature;
 }
 
-// Bulletproof CSV Parser to handle comma-delimited fields, quotes, and newlines
+// CSV Parser to handle comma-delimited fields, quotes, and newlines
 function parseCSV(csvText) {
   const lines = [];
   let currentLine = [];
@@ -205,68 +183,85 @@ function parseCSV(csvText) {
   return lines;
 }
 
-// Fetch recipes from Google Sheets with graceful fallback to local data
-function loadRecipesFromSheet() {
-  return fetch(SHEET_URL)
+function normalizeLookupText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getFeatureLookupNames(feature) {
+  const d = feature.properties || {};
+  return [
+    d.ADMIN,
+    d.NAME,
+    d.NAME_LONG,
+    d.NAME_PT,
+    d.GEOUNIT,
+    d.SOVEREIGNT,
+    getCountryNamePT(d)
+  ].filter(Boolean);
+}
+
+function createCountryLookup(features) {
+  return features.reduce((lookup, feature) => {
+    getFeatureLookupNames(feature).forEach(name => {
+      const key = normalizeLookupText(name);
+      if (key && !lookup.has(key)) {
+        lookup.set(key, feature);
+      }
+    });
+    return lookup;
+  }, new Map());
+}
+
+function buildRecipesFromCsv(csvText, features) {
+  const parsed = parseCSV(csvText);
+  if (parsed.length <= 1) throw new Error("CSV de receitas vazio ou inválido");
+
+  const countryLookup = createCountryLookup(features);
+  const recipes = {};
+
+  for (let i = 1; i < parsed.length; i++) {
+    const row = parsed[i];
+    if (!row || row.length < 2) continue;
+
+    const countryPt = row[0];
+    const dishName = row[1];
+    const image = row[2];
+    const description = row[3];
+    const link = row[4];
+
+    if (!countryPt || !dishName) continue;
+
+    const feature = countryLookup.get(normalizeLookupText(countryPt));
+    if (!feature) {
+      console.warn(`País do CSV não encontrado no mapa: ${countryPt}`);
+      continue;
+    }
+
+    recipes[feature.properties.ADMIN] = {
+      dish: dishName.trim(),
+      description: description ? description.trim() : "",
+      image: image && image.trim() !== "" ? image.trim() : RECIPE_IMAGE_FALLBACK,
+      link: link && link.trim() !== "" ? link.trim() : "https://receitas.globo.com/"
+    };
+  }
+
+  return recipes;
+}
+
+function loadRecipesCsvText() {
+  return fetch(recipesCsvUrl)
     .then(res => {
-      if (!res.ok) throw new Error("Falha ao buscar planilha de receitas");
+      if (!res.ok) throw new Error("Falha ao buscar CSV local de receitas");
       return res.text();
     })
-    .then(csvText => {
-      const parsed = parseCSV(csvText);
-      if (parsed.length <= 1) throw new Error("Planilha vazia ou inválida");
-      
-      const recipes = { ...recipesData };
-      
-      for (let i = 1; i < parsed.length; i++) {
-        const row = parsed[i];
-        if (!row || row.length < 3) continue;
-        
-        const id = row[0];
-        const dishName = row[1];
-        const paisPt = row[2];
-        const customImage = row[3];
-        
-        // Parse up to 5 ingredients and quantities
-        const ingredients = [];
-        for (let j = 4; j < 14; j += 2) {
-          const ingName = row[j];
-          const ingQty = row[j+1];
-          if (ingName && ingName.trim() !== '') {
-            ingredients.push({
-              name: ingName.trim(),
-              quantity: ingQty ? ingQty.trim() : ''
-            });
-          }
-        }
-        
-        // Modo de preparo split by '|'
-        const prepSteps = row[14] ? row[14].split('|').map(s => s.trim()).filter(s => s !== '') : [];
-        
-        // Map country to English ADMIN name
-        const englishName = sheetCountryMap[paisPt] || id.split('-')[0];
-        
-        // Fallback Unsplash image from data.js local data
-        const localFallback = recipesData[englishName];
-        const fallbackImage = localFallback ? localFallback.image : "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop";
-        
-        recipes[englishName] = {
-          dish: dishName,
-          description: localFallback ? localFallback.description : `Uma deliciosa receita tradicional de ${paisPt} de dar água na boca, preparada para a Copa dos Sabores.`,
-          image: customImage && customImage.trim() !== '' ? customImage.trim() : fallbackImage,
-          ingredients: ingredients,
-          instructions: prepSteps
-        };
-      }
-      
-      fetchedRecipesData = recipes;
-      console.log("Recipes loaded successfully from Google Sheets:", fetchedRecipesData);
-      return recipes;
-    })
     .catch(err => {
-      console.warn("Utilizando dados locais como fallback devido a erro na planilha:", err);
-      // Fallback
-      fetchedRecipesData = recipesData;
+      console.warn("CSV local de receitas não pôde ser carregado:", err);
+      return "";
     });
 }
 
@@ -441,20 +436,20 @@ const world = Globe()
   .polygonLabel(({ properties: d }) => {
     if (shouldDisableHoverEffects()) return '';
 
+    const participating = hasRecipeForCountry(d.ADMIN);
+    if (!participating) return '';
+
     const ptName = getCountryNamePT(d);
-    const participating = worldCupTeams.includes(d.ADMIN);
     const titles = worldCupTitles[d.ADMIN] || 0;
     const flagUrl = getFlagUrl(d);
     const flagHtml = flagUrl
       ? `<img src="${flagUrl}" style="width: 22px; height: 22px; object-fit: cover; border-radius: 4px; border: 1px solid #ffc800; display: inline-block;" alt="flag">`
       : '';
-    const titlesHtml = participating
-      ? `<div style="font-size: 0.8rem; margin-top: 4px; color: ${titles > 0 ? '#ffc800' : '#aaa'}; display: flex; align-items: center; gap: 4px;">
+    const titlesHtml = `<div style="font-size: 0.8rem; margin-top: 4px; color: ${titles > 0 ? '#ffc800' : '#aaa'}; display: flex; align-items: center; gap: 4px;">
           🏆 ${titles} ${titles === 1 ? 'título' : 'títulos'}
-         </div>`
-      : '';
+         </div>`;
     return `
-    <div style="background: rgba(0, 0, 0, 0.9); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Globo Tx', sans-serif; border: 1px solid ${participating ? '#ffc800' : 'rgba(255, 255, 255, 0.15)'}; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+    <div style="background: rgba(0, 0, 0, 0.9); color: white; padding: 8px 12px; border-radius: 8px; font-family: 'Globo Tx', sans-serif; border: 1px solid #ffc800; display: flex; flex-direction: column; align-items: center; pointer-events: none;">
       <div style="display: flex; align-items: center; gap: 8px;">
         ${flagHtml}
         <b style="font-size: 0.95rem; white-space: nowrap;">${ptName}</b>
@@ -547,7 +542,8 @@ const world = Globe()
           openModal(ptName, {
             dish: "Iguarias Locais",
             description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
-            image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
+            image: RECIPE_IMAGE_FALLBACK,
+            link: "https://receitas.globo.com/"
           }, getCountryIsoA2(d.properties), countryName);
         }, 300);
       }
@@ -624,24 +620,34 @@ function getPolygonCenterAndArea(feature) {
   };
 }
 
-// Start loading recipes from sheet immediately
-const recipesPromise = loadRecipesFromSheet();
+// Start loading local recipe CSV immediately
+const recipesCsvPromise = loadRecipesCsvText();
 
-// Load GeoJSON data for countries and sheet recipes in parallel
+// Load GeoJSON data for countries and local recipe CSV in parallel
 Promise.all([
   fetch(countriesGeoJsonUrl).then(res => res.json()),
-  recipesPromise
+  recipesCsvPromise
 ])
-  .then(([countries]) => {
+  .then(([countries, recipesCsvText]) => {
     const mapFeatures = countries.features
       .map(normalizeMapFeature)
       .map(scaleCountryGeometry);
 
-    // Render all countries so outlines cover the entire globe
+    try {
+      fetchedRecipesData = recipesCsvText ? buildRecipesFromCsv(recipesCsvText, mapFeatures) : {};
+      console.log("Recipes loaded successfully from local CSV:", fetchedRecipesData);
+    } catch (err) {
+      console.warn("CSV local de receitas inválido:", err);
+      fetchedRecipesData = {};
+    }
+
+    const csvMapFeatures = mapFeatures.filter(feature => isParticipating(feature));
+
+    // Render all countries for map context. Only CSV-backed countries are interactive.
     world.polygonsData(mapFeatures);
 
-    // Initialize the glassmorphic search panel with country rows
-    initializeCountrySearch(mapFeatures);
+    // Initialize the glassmorphic search panel with CSV-backed country rows
+    initializeCountrySearch(csvMapFeatures);
 
     // Setup Auto-rotation
     world.controls().autoRotate = true;
@@ -955,7 +961,8 @@ function initializeCountrySearch(features) {
             openModal(ptName, {
               dish: "Iguarias Locais",
               description: `Ainda estamos reunindo receitas tradicionais para ${ptName}. Fique ligado para mais novidades culinárias da Copa!`,
-              image: "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop"
+              image: RECIPE_IMAGE_FALLBACK,
+              link: "https://receitas.globo.com/"
             }, getCountryIsoA2(d.properties), countryName);
           }, 300);
         }
@@ -1043,33 +1050,19 @@ function openModal(country, recipe, isoCode, englishName) {
     }
   }
 
-  // Populate dynamic sheet-fed ingredients
-  const ingredientsSection = document.getElementById('ingredientsSection');
-  const ingredientsList = document.getElementById('ingredientsList');
   const fullRecipeCta = document.getElementById('fullRecipeCta');
 
-  if (recipe.ingredients && recipe.ingredients.length > 0) {
-    ingredientsList.innerHTML = '';
-    recipe.ingredients.forEach(ing => {
-      const li = document.createElement('li');
-      li.className = 'ingredient-item';
-      li.innerHTML = `
-        <span class="ingredient-bullet">•</span>
-        <span class="ingredient-name">${ing.name}</span>
-        ${ing.quantity ? `<span class="ingredient-qty">${ing.quantity}</span>` : ''}
-      `;
-      ingredientsList.appendChild(li);
-    });
-    ingredientsSection.classList.remove('hidden');
-  } else {
-    ingredientsSection.classList.add('hidden');
-  }
-
   if (fullRecipeCta) {
-    fullRecipeCta.classList.remove('hidden');
+    const recipeLink = recipe.link || "https://receitas.globo.com/";
+    fullRecipeCta.href = recipeLink;
+    fullRecipeCta.classList.toggle('hidden', !recipeLink);
   }
 
-  recipeImageEl.src = recipe.image;
+  recipeImageEl.onerror = () => {
+    recipeImageEl.onerror = null;
+    recipeImageEl.src = RECIPE_IMAGE_FALLBACK;
+  };
+  recipeImageEl.src = recipe.image || RECIPE_IMAGE_FALLBACK;
   modal.classList.remove('hidden');
 }
 

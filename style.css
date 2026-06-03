@@ -883,78 +883,6 @@ p {
   color: #28cdd2;
 }
 
-/* ==========================================
-   DYNAMIC INGREDIENTS & STEPS DETAIL STYLES
-   ========================================== */
-
-.recipe-section {
-  margin-top: 25px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-  padding-top: 20px;
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-.recipe-section.hidden {
-  display: none !important;
-}
-
-.recipe-section h4 {
-  font-family: var(--font-subtitle);
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #28cdd2;
-  /* Vibrant green/teal */
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Ingredients Grid Layout */
-.ingredients-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  list-style: none;
-  margin-bottom: 5px;
-}
-
-.ingredient-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.9rem;
-  font-family: var(--font-body);
-  transition: background 0.2s ease;
-}
-
-.ingredient-item:hover {
-  background: rgba(40, 205, 210, 0.05);
-}
-
-.ingredient-bullet {
-  color: #28cdd2;
-  font-weight: bold;
-}
-
-.ingredient-name {
-  color: #dddddd;
-  font-weight: 400;
-}
-
-.ingredient-qty {
-  color: #888888;
-  font-size: 0.8rem;
-  margin-left: auto;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-/* Instructions Steps list */
 .recipe-cta {
   display: inline-flex;
   align-items: center;
@@ -987,18 +915,6 @@ p {
 
 .recipe-cta.hidden {
   display: none !important;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes searchSlideUp {
@@ -1192,12 +1108,5 @@ p {
     pointer-events: none !important;
     visibility: hidden !important;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-  }
-}
-
-@media (max-width: 480px) {
-  .ingredients-grid {
-    grid-template-columns: 1fr;
-    /* Single column ingredients on phone */
   }
 }
