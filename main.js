@@ -1,5 +1,5 @@
 import countriesGeoJsonUrl from './ne_110m_admin_0_countries.geojson?url';
-import recipesCsvUrl from './assets/paises-mapa.csv?url';
+import recipesCsvUrl from './assets/paises-mapa-v2.csv?url';
 
 // Number of World Cup titles won by country
 const worldCupTitles = {
@@ -192,6 +192,23 @@ function normalizeLookupText(value) {
     .trim();
 }
 
+const csvCountryNameAliases = {
+  "fraca": "franca",
+  "holanda": "netherlands",
+  "rd do congo": "democratic republic of the congo",
+  "republica da coreia": "south korea",
+  "ri ira": "iran"
+};
+
+function findCountryFeature(countryLookup, countryName) {
+  const normalizedName = normalizeLookupText(countryName);
+  const directMatch = countryLookup.get(normalizedName);
+  if (directMatch) return directMatch;
+
+  const alias = csvCountryNameAliases[normalizedName];
+  return alias ? countryLookup.get(alias) : null;
+}
+
 function getFeatureLookupNames(feature) {
   const d = feature.properties || {};
   return [
@@ -221,6 +238,7 @@ function buildRecipesFromCsv(csvText, features) {
   const parsed = parseCSV(csvText);
   if (parsed.length <= 1) throw new Error("CSV de receitas vazio ou inválido");
 
+  const headers = parsed[0];
   const countryLookup = createCountryLookup(features);
   const recipes = {};
 
@@ -234,9 +252,15 @@ function buildRecipesFromCsv(csvText, features) {
     const description = row[3];
     const link = row[4];
 
+    const missingFields = headers.filter((header, index) => !String(row[index] || "").trim());
+    if (missingFields.length) {
+      console.warn(`País do CSV ignorado por informações incompletas: ${countryPt || `linha ${i + 1}`} (${missingFields.join(", ")})`);
+      continue;
+    }
+
     if (!countryPt || !dishName) continue;
 
-    const feature = countryLookup.get(normalizeLookupText(countryPt));
+    const feature = findCountryFeature(countryLookup, countryPt);
     if (!feature) {
       console.warn(`País do CSV não encontrado no mapa: ${countryPt}`);
       continue;
@@ -281,30 +305,100 @@ function shouldDisableHoverEffects() {
   return window.innerWidth <= 768 || !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
-function setupMobileGlobeTouchFilter(container) {
+function setupMobileGlobeHorizontalRotation(container) {
   if (!container) return;
 
   let startX = 0;
   let startY = 0;
+  let lastX = 0;
+  let activePointerId = null;
+  let isHorizontalDragging = false;
   let movedDuringTouch = false;
+  let autoRotatePausedByTouch = false;
+  const horizontalThreshold = 10;
+  const rotationDegreesPerPixel = 0.32;
 
-  function resetGesture(clientX, clientY) {
+  function resetGesture(clientX, clientY, pointerId = null) {
     startX = clientX;
     startY = clientY;
+    lastX = clientX;
+    activePointerId = pointerId;
+    isHorizontalDragging = false;
     movedDuringTouch = false;
   }
 
-  function isHorizontalTouchDrag(clientX, clientY) {
-    const deltaX = Math.abs(clientX - startX);
-    const deltaY = Math.abs(clientY - startY);
-    return deltaX > 8 && deltaX > deltaY;
+  function getGestureDelta(clientX, clientY) {
+    return {
+      deltaX: Math.abs(clientX - startX),
+      deltaY: Math.abs(clientY - startY)
+    };
   }
 
-  function blockTouchDragFromGlobe(e, clientX, clientY) {
-    if (!isHorizontalTouchDrag(clientX, clientY)) return;
+  function shouldStartHorizontalDrag(clientX, clientY) {
+    const { deltaX, deltaY } = getGestureDelta(clientX, clientY);
+    return deltaX > horizontalThreshold && deltaX > deltaY;
+  }
 
-    movedDuringTouch = true;
+  function pauseAutoRotateForTouch() {
+    if (!world.controls().autoRotate) return;
+
+    world.controls().autoRotate = false;
+    autoRotatePausedByTouch = true;
+  }
+
+  function resumeAutoRotateAfterTouch() {
+    if (!autoRotatePausedByTouch) return;
+
+    world.controls().autoRotate = true;
+    autoRotatePausedByTouch = false;
+  }
+
+  function rotateGlobeHorizontally(clientX) {
+    const movementX = clientX - lastX;
+    lastX = clientX;
+
+    if (!movementX) return;
+
+    const currentPOV = world.pointOfView();
+    world.pointOfView({
+      lat: currentPOV.lat,
+      lng: currentPOV.lng - (movementX * rotationDegreesPerPixel),
+      altitude: currentPOV.altitude
+    }, 0);
+  }
+
+  function handleTouchMove(e) {
+    if (e.pointerType !== 'touch' || e.pointerId !== activePointerId) return;
+
+    if (!isHorizontalDragging) {
+      if (!shouldStartHorizontalDrag(e.clientX, e.clientY)) return;
+
+      isHorizontalDragging = true;
+      movedDuringTouch = true;
+      lastX = e.clientX;
+      pauseAutoRotateForTouch();
+      if (container.setPointerCapture) {
+        container.setPointerCapture(e.pointerId);
+      }
+    }
+
+    if (e.cancelable) {
+      e.preventDefault();
+    }
     e.stopImmediatePropagation();
+    rotateGlobeHorizontally(e.clientX);
+  }
+
+  function resetTouchDrag(e) {
+    if (e.pointerType !== 'touch' || e.pointerId !== activePointerId) return;
+
+    if (container.releasePointerCapture && container.hasPointerCapture?.(e.pointerId)) {
+      container.releasePointerCapture(e.pointerId);
+    }
+
+    activePointerId = null;
+    isHorizontalDragging = false;
+    resumeAutoRotateAfterTouch();
   }
 
   function blockSyntheticClickAfterDrag(e) {
@@ -318,35 +412,20 @@ function setupMobileGlobeTouchFilter(container) {
 
   container.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'touch') {
-      resetGesture(e.clientX, e.clientY);
+      resetGesture(e.clientX, e.clientY, e.pointerId);
     }
   }, { capture: true, passive: true });
 
-  container.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'touch') {
-      blockTouchDragFromGlobe(e, e.clientX, e.clientY);
-    }
-  }, { capture: true, passive: true });
+  container.addEventListener('pointermove', handleTouchMove, { capture: true, passive: false });
 
   container.addEventListener('pointerup', (e) => {
     if (e.pointerType === 'touch') {
       blockSyntheticClickAfterDrag(e);
+      resetTouchDrag(e);
     }
   }, { capture: true });
 
-  container.addEventListener('touchstart', (e) => {
-    const touch = e.touches[0];
-    if (touch) {
-      resetGesture(touch.clientX, touch.clientY);
-    }
-  }, { capture: true, passive: true });
-
-  container.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    if (touch) {
-      blockTouchDragFromGlobe(e, touch.clientX, touch.clientY);
-    }
-  }, { capture: true, passive: true });
+  container.addEventListener('pointercancel', resetTouchDrag, { capture: true });
 
   container.addEventListener('click', blockSyntheticClickAfterDrag, { capture: true });
 }
@@ -653,7 +732,7 @@ Promise.all([
     world.controls().autoRotate = true;
     world.controls().autoRotateSpeed = 0.25; // Slow down by 50%
     world.controls().enableZoom = false;   // Disable default scroll zoom
-    world.controls().enableRotate = false; // Disable default dragging (prevents scroll conflicts)
+    world.controls().enableRotate = false; // Horizontal mobile dragging is handled by a custom scroll-safe gesture.
     world.controls().enablePan = false;    // Do not trap vertical page-scroll gestures
     if (window.innerWidth <= 768 && world.controls().touches) {
       world.controls().touches.ONE = null;
@@ -661,7 +740,7 @@ Promise.all([
     }
     const globeContainer = document.getElementById('globeViz');
     applyGlobeScrollTouchAction(globeContainer);
-    setupMobileGlobeTouchFilter(globeContainer);
+    setupMobileGlobeHorizontalRotation(globeContainer);
     window.requestAnimationFrame(() => applyGlobeScrollTouchAction(globeContainer));
     setDefaultGlobeView(0);
 
