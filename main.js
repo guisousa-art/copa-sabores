@@ -1,5 +1,5 @@
 import countriesGeoJsonUrl from './ne_110m_admin_0_countries.geojson?url';
-import recipesCsvUrl from './assets/paises-mapa-v3.csv?url';
+import recipesCsvUrl from './assets/paises-mapa-v4.csv?url';
 
 // Number of World Cup titles won by country
 const worldCupTitles = {
