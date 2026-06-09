@@ -13,6 +13,19 @@
 
 <body>
 
+  <div id="mapLoader" class="map-loader" role="status" aria-live="polite">
+    <div class="map-loader-content">
+      <div class="map-loader-orbit" aria-hidden="true">
+        <span class="map-loader-globe"></span>
+      </div>
+      <div class="map-loader-copy">
+        <span class="map-loader-kicker">Copa dos Sabores</span>
+        <strong>Mapa dos Campeões</strong>
+        <span id="mapLoaderStatus">Carregando mapa</span>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="header-content">
       <h1>Mapa dos<br>Campeões</h1>
@@ -59,7 +72,7 @@
     <div class="modal-content glass-effect">
       <button id="closeModal" class="close-btn">&times;</button>
       <div class="recipe-image-container">
-        <img id="recipeImage" src="" alt="Recipe Image">
+        <img id="recipeImage" src="" alt="Recipe Image" loading="lazy" decoding="async">
       </div>
       <div class="recipe-details">
         <div class="country-header-row">

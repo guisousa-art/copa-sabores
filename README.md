@@ -56,8 +56,8 @@ npm run preview
 ├── ne_110m_admin_0_countries.geojson
 ├── assets/
 │   ├── paises-mapa.csv
-│   ├── background_desk.png
-│   ├── background_mob.png
+│   ├── background_desk.webp
+│   ├── background_mob.webp
 │   ├── mouse-icone.svg
 │   ├── mouse-icone-click.svg
 │   ├── Gopher/
@@ -84,7 +84,7 @@ npm run preview
 
 `style.css` define a identidade visual, fontes locais, fundos responsivos, layout desktop/mobile, modal glassmorphism, lista de busca, controles do globo e estados de interacao.
 
-`ne_110m_admin_0_countries.geojson` e o mapa base. Ele tem 183 features e fornece propriedades como `ADMIN`, `GEOUNIT`, `NAME`, `ISO_A2` e a geometria `Polygon` ou `MultiPolygon`.
+`ne_110m_admin_0_countries.geojson` e o mapa base. Ele tem 183 features, foi reduzido para manter apenas as propriedades usadas pela aplicacao (`ADMIN`, `GEOUNIT`, `NAME`, `NAME_LONG`, `NAME_PT`, `SOVEREIGNT` e `ISO_A2`) e fornece a geometria `Polygon` ou `MultiPolygon` com coordenadas compactadas.
 
 `vite.config.js` usa `base: './'`, o que ajuda o build a funcionar em hospedagens com caminhos relativos.
 
@@ -129,7 +129,7 @@ const world = Globe()(document.getElementById('globeViz'))
 
 Configuracoes importantes:
 
-- fundo transparente para integrar com a arte em `assets/background_desk.png` e `assets/background_mob.png`;
+- fundo transparente para integrar com a arte em `assets/background_desk.webp` e `assets/background_mob.webp`;
 - oceano com material Three.js customizado;
 - atmosfera azul-esverdeada;
 - paises participantes com cor e altitude mais fortes;
@@ -151,18 +151,18 @@ Se um pais do CSV nao existir ou nao casar com nenhum nome do GeoJSON, ele conti
 
 ## Responsividade
 
-No desktop, o conteudo textual fica alinhado a esquerda e o globo e deslocado para manter a composicao visual. No mobile, o fundo muda para `background_mob.png`, a busca fica fixa no rodape e os controles do globo ficam acima dela.
+No desktop, o conteudo textual fica alinhado a esquerda e o globo e deslocado para manter a composicao visual. No mobile, o fundo muda para `background_mob.webp`, a busca fica fixa no rodape e os controles do globo ficam acima dela.
 
 O codigo tambem filtra gestos touch no globo para evitar que arrastos horizontais e cliques sinteticos prejudiquem a navegacao em telas pequenas.
 
 ## Assets
 
-- `assets/background_desk.png`: fundo desktop.
-- `assets/background_mob.png`: fundo mobile.
+- `assets/background_desk.webp`: fundo desktop.
+- `assets/background_mob.webp`: fundo mobile.
 - `assets/mouse-icone.svg`: cursor customizado.
 - `assets/mouse-icone-click.svg`: cursor customizado durante clique.
-- `assets/Gopher/`: familia usada em titulos e destaques.
-- `assets/GLOBOTIPO/`: familia usada em textos de apoio.
+- `assets/Gopher/`: familia usada em titulos e destaques; o CSS carrega os arquivos `.woff2`.
+- `assets/GLOBOTIPO/`: familia usada em textos de apoio; o CSS carrega os arquivos `.woff2`.
 - `assets/texturas-globo.ai`: arquivo-fonte de textura/arte.
 
 ## Manutencao

@@ -221,6 +221,15 @@ function getCsvCountryFallbackMetadata(countryName) {
   return csvCountryFallbackMetadata[normalizeLookupText(countryName)] || {};
 }
 
+function getOptimizedRecipeImageUrl(imageUrl) {
+  const trimmedUrl = imageUrl ? imageUrl.trim() : "";
+  if (!trimmedUrl) return "";
+
+  return trimmedUrl.replace(/\/(\d{3,4})x0\/smart\//g, (match, width) => (
+    Number(width) > 640 ? '/640x0/smart/' : match
+  ));
+}
+
 function findCountryFeature(countryLookup, countryName) {
   const normalizedName = normalizeLookupText(countryName);
   const directMatch = countryLookup.get(normalizedName);
@@ -285,7 +294,7 @@ function buildRecipesFromCsv(csvText, features) {
     const recipe = {
       dish: dishName.trim(),
       description: description ? description.trim() : "",
-      image: image && image.trim() !== "" ? image.trim() : RECIPE_IMAGE_FALLBACK,
+      image: getOptimizedRecipeImageUrl(image) || RECIPE_IMAGE_FALLBACK,
       link: link && link.trim() !== "" ? link.trim() : "https://receitas.globo.com/"
     };
     const feature = findCountryFeature(countryLookup, countryPt);
@@ -780,6 +789,21 @@ function getPolygonCenterAndArea(feature) {
 // Start loading local recipe CSV immediately
 const recipesCsvPromise = loadRecipesCsvText();
 
+function hideMapLoader() {
+  const loader = document.getElementById('mapLoader');
+  if (!loader) return;
+
+  loader.classList.add('is-hidden');
+  loader.setAttribute('aria-hidden', 'true');
+}
+
+function showMapLoaderError() {
+  const loaderStatus = document.getElementById('mapLoaderStatus');
+  if (loaderStatus) {
+    loaderStatus.textContent = 'Não foi possível carregar o mapa';
+  }
+}
+
 // Load GeoJSON data for countries and local recipe CSV in parallel
 Promise.all([
   fetch(countriesGeoJsonUrl).then(res => res.json()),
@@ -1018,8 +1042,13 @@ Promise.all([
       setTimeout(() => {
         setDefaultGlobeView(0);
         globeContainer.classList.add('is-ready');
+        window.setTimeout(hideMapLoader, 250);
       }, 150);
     }
+  })
+  .catch(err => {
+    console.error("Falha ao carregar visualização inicial do mapa:", err);
+    showMapLoaderError();
   });
 
 // Setup glassmorphic floating search list and filter logic
@@ -1037,6 +1066,17 @@ function initializeCountrySearch(searchItems) {
     }, new Map());
 
   const participatingFeatures = Array.from(searchItemGroups.values());
+  let searchFlagsLoaded = false;
+
+  function loadSearchFlags() {
+    if (searchFlagsLoaded) return;
+    searchFlagsLoaded = true;
+
+    listEl.querySelectorAll('img.search-flag[data-src]').forEach((img) => {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+    });
+  }
   
   // Sort alphabetically by Portuguese name
   participatingFeatures.sort((a, b) => a.namePT.localeCompare(b.namePT, 'pt-BR'));
@@ -1052,7 +1092,7 @@ function initializeCountrySearch(searchItems) {
       const flagUrl = getFlagUrlByIso(item.isoCode);
         
       const flagHtml = flagUrl
-        ? `<img src="${flagUrl}" class="search-flag" alt="${item.namePT} flag">`
+        ? `<img ${searchFlagsLoaded ? `src="${flagUrl}"` : `data-src="${flagUrl}"`} class="search-flag" alt="" loading="lazy" decoding="async">`
         : `<div class="search-flag-placeholder"></div>`;
         
       li.innerHTML = `
@@ -1139,9 +1179,12 @@ function initializeCountrySearch(searchItems) {
   }
   
   renderList(participatingFeatures);
+  listEl.addEventListener('pointerenter', loadSearchFlags, { once: true });
+  listEl.addEventListener('pointerdown', loadSearchFlags, { once: true });
   
   // Real-time search filter matching country names and dish titles
   searchInput.addEventListener('input', (e) => {
+    loadSearchFlags();
     const query = normalizeLookupText(e.target.value);
     
     const filtered = participatingFeatures.filter(item => {
@@ -1164,6 +1207,7 @@ function initializeCountrySearch(searchItems) {
   const closeSearchBtn = document.getElementById('closeSearch');
   
   searchInput.addEventListener('focus', () => {
+    loadSearchFlags();
     if (window.innerWidth <= 768) {
       searchContainer.classList.add('is-open');
       document.body.classList.add('search-open');
@@ -1171,6 +1215,7 @@ function initializeCountrySearch(searchItems) {
   });
   
   searchInput.addEventListener('click', () => {
+    loadSearchFlags();
     if (window.innerWidth <= 768) {
       searchContainer.classList.add('is-open');
       document.body.classList.add('search-open');
