@@ -48,6 +48,7 @@ const initialGlobeLng = originalGlobeLng + initialGlobeRotationOffset;
 const EDGE_HOLD_SPIN_DEGREES_PER_SECOND = 131.25;
 const countryIsoOverrides = {
   France: 'FR',
+  Norway: 'NO',
   England: 'GB-ENG',
   Scotland: 'GB-SCT',
   Wales: 'GB-WLS',
@@ -1055,6 +1056,7 @@ Promise.all([
 function initializeCountrySearch(searchItems) {
   const listEl = document.getElementById('countryList');
   const searchInput = document.getElementById('countrySearch');
+  const INITIAL_VISIBLE_FLAGS = 6;
 
   const searchItemGroups = searchItems
     .filter(item => item && item.nameEN && item.recipe)
@@ -1085,14 +1087,15 @@ function initializeCountrySearch(searchItems) {
   function renderList(filteredFeatures) {
     listEl.innerHTML = '';
     
-    filteredFeatures.forEach(item => {
+    filteredFeatures.forEach((item, index) => {
       const li = document.createElement('li');
       li.className = 'country-item';
       
       const flagUrl = getFlagUrlByIso(item.isoCode);
+      const shouldLoadFlag = searchFlagsLoaded || index < INITIAL_VISIBLE_FLAGS;
         
       const flagHtml = flagUrl
-        ? `<img ${searchFlagsLoaded ? `src="${flagUrl}"` : `data-src="${flagUrl}"`} class="search-flag" alt="" loading="lazy" decoding="async">`
+        ? `<img ${shouldLoadFlag ? `src="${flagUrl}"` : `data-src="${flagUrl}"`} class="search-flag" alt="" loading="lazy" decoding="async">`
         : `<div class="search-flag-placeholder"></div>`;
         
       li.innerHTML = `

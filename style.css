@@ -41,6 +41,8 @@
   --font-subtitle: 'Gopher', sans-serif;
   --font-cta: 'Gopher', sans-serif;
   --font-body: 'Globo Tx', sans-serif;
+  --modal-radius: 24px;
+  --modal-image-gap: 12px;
   --desktop-content-left: clamp(144px, 12vw, 264px);
   --desktop-content-width: clamp(360px, 28vw, 460px);
   --desktop-layout-gap: clamp(8px, 1vw, 16px);
@@ -394,7 +396,7 @@ p {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-radius: 24px;
+  border-radius: var(--modal-radius);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   width: 90%;
@@ -428,22 +430,23 @@ p {
 }
 
 .recipe-image-container {
+  position: relative;
   width: 100%;
   height: 250px;
   overflow: hidden;
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
+  padding: var(--modal-image-gap);
+  border-top-left-radius: var(--modal-radius);
+  border-top-right-radius: var(--modal-radius);
 }
 
 .recipe-image-container img {
+  display: block;
   width: 100%;
   height: 100%;
+  border-radius: calc(var(--modal-radius) - var(--modal-image-gap));
   object-fit: cover;
+  object-position: center center;
   transition: transform 0.5s ease;
-}
-
-.modal-content:hover .recipe-image-container img {
-  transform: scale(1.05);
 }
 
 .recipe-details {
@@ -695,6 +698,7 @@ p {
   }
 
   .recipe-image-container {
+    padding: 8px;
     height: 200px;
   }
 
@@ -761,7 +765,7 @@ p {
   }
 
   .recipe-image-container {
-    height: 150px;
+    height: 180px;
     flex-shrink: 0;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -771,7 +775,7 @@ p {
   .recipe-details {
     padding: 18px 20px;
     overflow-y: auto;
-    max-height: calc(85vh - 150px);
+    max-height: calc(85vh - 180px);
   }
 
   .recipe-details h2 {
@@ -831,26 +835,27 @@ p {
     color: #ffffff;
   }
 
-  /* Premium Horizontal Modal Layout on Desktop to fit perfectly in constrained embed heights */
+  /* Desktop keeps the image on the left, but gives it a landscape-oriented frame. */
   .modal-content.glass-effect {
-    max-width: 800px;
-    width: 90%;
-    max-height: 520px;
-    height: 520px;
+    max-width: 1100px;
+    width: 94%;
+    max-height: calc(100dvh - 24px);
+    height: min(94dvh, 450px);
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    overflow: visible;
-    /* Let share dropdown menu overflow without clipping */
+    overflow: hidden;
   }
 
   .recipe-image-container {
-    width: 320px;
-    flex-shrink: 0;
+    width: 54%;
+    min-width: 500px;
     height: 100%;
-    border-top-left-radius: 24px;
-    border-bottom-left-radius: 24px;
+    flex: 0 0 54%;
+    border-top-left-radius: var(--modal-radius);
     border-top-right-radius: 0;
+    border-bottom-left-radius: var(--modal-radius);
+    border-bottom-right-radius: 0;
     overflow: hidden;
   }
 
@@ -858,14 +863,14 @@ p {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
   }
 
   .recipe-details {
-    flex: 1;
-    padding: 30px;
-    overflow-y: auto;
-    height: 100%;
-    max-height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 30px 34px 30px 26px;
+    overflow-y: visible;
     display: flex;
     flex-direction: column;
   }
