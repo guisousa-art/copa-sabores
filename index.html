@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Copa dos Sabores | Receitas Nacionais</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;icon_names=shuffle">
   <link rel="stylesheet" href="style.css">
 
   <!-- Use Globe.gl via unpkg -->
@@ -33,9 +34,14 @@
       
       <!-- Glassmorphic Search Panel -->
       <div class="search-container glass-effect">
-        <div class="search-input-wrapper">
-          <input type="text" id="countrySearch" placeholder="Selecione um país" autocomplete="off" aria-label="Busque países ou receitas">
-          <button id="closeSearch" class="search-close-btn" aria-label="Fechar busca">&times;</button>
+        <div class="search-controls-row">
+          <div class="search-input-wrapper">
+            <input type="text" id="countrySearch" placeholder="Selecione um país" autocomplete="off" aria-label="Busque países ou receitas">
+            <button id="closeSearch" class="search-close-btn" aria-label="Fechar busca">&times;</button>
+          </div>
+          <button id="randomCountry" class="random-country-btn" type="button" aria-label="Selecionar país aleatório" title="Selecionar país aleatório" disabled>
+            <span class="material-symbols-outlined" aria-hidden="true">shuffle</span>
+          </button>
         </div>
         <ul id="countryList" class="country-list">
           <!-- Dynamically populated in main.js -->
@@ -72,7 +78,7 @@
     <div class="modal-content glass-effect">
       <button id="closeModal" class="close-btn">&times;</button>
       <div class="recipe-image-container">
-        <img id="recipeImage" src="" alt="Recipe Image" loading="lazy" decoding="async">
+        <img id="recipeImage" src="" alt="Recipe Image" decoding="async">
       </div>
       <div class="recipe-details">
         <div class="country-header-row">

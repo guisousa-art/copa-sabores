@@ -6,7 +6,7 @@ Mapa interativo em 3D para explorar selecoes da Copa do Mundo 2026 e descobrir p
 
 O projeto e uma aplicacao front-end feita com Vite, JavaScript puro, Globe.gl e Three.js. A pagina principal renderiza um globo WebGL com dados geograficos locais, colore os paises participantes e abre detalhes gastronomicos quando o usuario seleciona um pais pelo mapa ou pela busca.
 
-As receitas e a lista de paises clicaveis sao carregadas diretamente do CSV local `assets/paises-mapa-v4.csv`. O GeoJSON continua sendo usado para desenhar o mapa-mundi inteiro no globo.
+As receitas e a lista de paises clicaveis sao carregadas diretamente do CSV local `assets/paises-mapa-v5.csv`. O GeoJSON continua sendo usado para desenhar o mapa-mundi inteiro no globo.
 
 ## Como Rodar
 
@@ -55,7 +55,7 @@ npm run preview
 ├── vite.config.js
 ├── ne_110m_admin_0_countries.geojson
 ├── assets/
-│   ├── paises-mapa-v4.csv
+│   ├── paises-mapa-v5.csv
 │   ├── background_desk.webp
 │   ├── background_mob.webp
 │   ├── mouse-icone.svg
@@ -80,7 +80,7 @@ npm run preview
 - popula a busca;
 - abre e fecha o modal de receita.
 
-`assets/paises-mapa-v4.csv` contem os dados exibidos no modal: pais, nome da receita, imagem, descricao e link da materia.
+`assets/paises-mapa-v5.csv` contem os dados exibidos no modal: pais, nome da receita, imagem, descricao e link da materia.
 
 `style.css` define a identidade visual, fontes locais, fundos responsivos, layout desktop/mobile, modal glassmorphism, lista de busca, controles do globo e estados de interacao.
 
@@ -92,7 +92,7 @@ npm run preview
 
 1. `index.html` carrega `style.css`, Globe.gl via CDN e `main.js` como modulo.
 2. `main.js` importa a URL do GeoJSON e a URL do CSV local via Vite.
-3. A funcao `loadRecipesCsvText()` carrega `assets/paises-mapa-v4.csv`.
+3. A funcao `loadRecipesCsvText()` carrega `assets/paises-mapa-v5.csv`.
 4. O CSV e parseado por `parseCSV()`, que suporta campos com aspas, virgulas e quebras de linha.
 5. O app cruza o nome do pais no CSV com os nomes do GeoJSON, incluindo `NAME_PT` e o nome traduzido por `Intl.DisplayNames`.
 6. Em paralelo, o GeoJSON dos paises e carregado.
@@ -103,7 +103,7 @@ npm run preview
 
 ## Dados de Receitas
 
-As receitas ficam em `assets/paises-mapa-v4.csv`.
+As receitas ficam em `assets/paises-mapa-v5.csv`.
 
 O parser espera as colunas nesta ordem:
 
@@ -171,7 +171,7 @@ Para atualizar titulos de Copa, edite `worldCupTitles` em `main.js`.
 
 Para corrigir bandeiras ou subdivisoes do Reino Unido, ajuste `countryIsoOverrides` e `normalizeMapFeature()` em `main.js`.
 
-Para adicionar, remover ou atualizar paises clicaveis e exibidos na busca, edite `assets/paises-mapa-v4.csv`.
+Para adicionar, remover ou atualizar paises clicaveis e exibidos na busca, edite `assets/paises-mapa-v5.csv`.
 
 Para mudar o visual da pagina, comece por `:root` em `style.css`, onde ficam cores, fontes e medidas-base do layout.
 

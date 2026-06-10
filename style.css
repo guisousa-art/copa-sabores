@@ -437,6 +437,7 @@ p {
   padding: var(--modal-image-gap);
   border-top-left-radius: var(--modal-radius);
   border-top-right-radius: var(--modal-radius);
+  background: rgba(3, 8, 7, 0.72);
 }
 
 .recipe-image-container img {
@@ -446,7 +447,15 @@ p {
   border-radius: calc(var(--modal-radius) - var(--modal-image-gap));
   object-fit: cover;
   object-position: center center;
-  transition: transform 0.5s ease;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.24s ease, visibility 0s linear 0.24s, transform 0.5s ease;
+}
+
+.recipe-image-container img.is-loaded {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.24s ease, transform 0.5s ease;
 }
 
 .recipe-details {
@@ -961,7 +970,7 @@ p {
   border: 1px solid rgba(40, 205, 210, 0.25);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 15px rgba(40, 205, 210, 0.1);
   padding: 16px;
-  width: 70%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -970,13 +979,23 @@ p {
   /* Ensure inputs and items can be clicked */
 }
 
-.search-input-wrapper {
+.search-controls-row {
   position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
   width: 100%;
   margin: -32px 0 12px 0;
   /* Shift up by 32px to cross the top border, keeping it inset horizontally */
   z-index: 2;
   /* Sits above the container border */
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
 }
 
 #countrySearch {
@@ -993,6 +1012,50 @@ p {
   outline: none;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   transition: all 0.3s ease;
+}
+
+.random-country-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 50px;
+  width: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  padding: 0;
+  background: #060e0d;
+  border: 1.5px solid #28cdd2;
+  border-radius: 14px;
+  color: #ffc800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.random-country-btn:hover,
+.random-country-btn:focus-visible {
+  background: #030807;
+  border-color: #ffc800;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 200, 0, 0.36);
+  outline: none;
+}
+
+.random-country-btn:active {
+  transform: translateY(1px);
+}
+
+.random-country-btn:disabled {
+  cursor: default;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.random-country-btn .material-symbols-outlined {
+  display: block;
+  font-size: 24px;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 #countrySearch::placeholder {
@@ -1248,7 +1311,7 @@ p {
     pointer-events: none;
   }
 
-  .search-container:not(.is-open) .search-input-wrapper {
+  .search-container:not(.is-open) .search-controls-row {
     margin: 0;
     width: 100%;
   }
@@ -1276,7 +1339,7 @@ p {
     gap: 20px;
   }
 
-  .search-container.is-open .search-input-wrapper {
+  .search-container.is-open .search-controls-row {
     margin: 0;
     width: 100%;
   }
