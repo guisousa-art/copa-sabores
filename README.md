@@ -56,6 +56,7 @@ npm run preview
 ├── ne_110m_admin_0_countries.geojson
 ├── assets/
 │   ├── paises-mapa-v5.csv
+│   ├── recipe-images/
 │   ├── background_desk.webp
 │   ├── background_mob.webp
 │   ├── mouse-icone.svg
@@ -81,6 +82,8 @@ npm run preview
 - abre e fecha o modal de receita.
 
 `assets/paises-mapa-v5.csv` contem os dados exibidos no modal: pais, nome da receita, imagem, descricao e link da materia.
+
+`assets/recipe-images/` contem copias locais de imagens que precisam ser empacotadas junto com o mapa para funcionar de forma consistente quando o projeto e embedado em paginas do Receitas.
 
 `style.css` define a identidade visual, fontes locais, fundos responsivos, layout desktop/mobile, modal glassmorphism, lista de busca, controles do globo e estados de interacao.
 
@@ -159,6 +162,7 @@ O codigo tambem filtra gestos touch no globo para evitar que arrastos horizontai
 
 - `assets/background_desk.webp`: fundo desktop.
 - `assets/background_mob.webp`: fundo mobile.
+- `assets/recipe-images/`: imagens locais de receitas usadas no CSV quando a URL externa original nao deve ser carregada diretamente pelo embed.
 - `assets/mouse-icone.svg`: cursor customizado.
 - `assets/mouse-icone-click.svg`: cursor customizado durante clique.
 - `assets/Gopher/`: familia usada em titulos e destaques; o CSS carrega os arquivos `.woff2`.
@@ -177,7 +181,8 @@ Para mudar o visual da pagina, comece por `:root` em `style.css`, onde ficam cor
 
 ## Observacoes Tecnicas
 
-- A aplicacao depende de rede para carregar Globe.gl via CDN, imagens externas de receitas e bandeiras do FlagCDN.
+- A aplicacao depende de rede para carregar Globe.gl via CDN, as imagens de receitas que ainda usam URLs externas e bandeiras do FlagCDN.
+- As imagens de receitas salvas como `recipe-images/...` no CSV sao resolvidas por `main.js` e empacotadas pelo Vite no build.
 - O CSV de receitas e local e entra no build como asset do Vite.
 - O build final e gerado em `dist/`.
 - Como `base` esta configurado como `./`, os assets do build usam caminhos relativos.

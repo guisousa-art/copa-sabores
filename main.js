@@ -1,6 +1,23 @@
 import countriesGeoJsonUrl from './ne_110m_admin_0_countries.geojson?url';
 import recipesCsvUrl from './assets/paises-mapa-v5.csv?url';
 
+const localRecipeImageModules = import.meta.glob('./assets/recipe-images/*', {
+  eager: true,
+  query: '?url',
+  import: 'default'
+});
+
+const localRecipeImageUrls = Object.entries(localRecipeImageModules).reduce((imageUrls, [path, url]) => {
+  const fileName = path.split('/').pop();
+
+  imageUrls[fileName] = url;
+  imageUrls[`recipe-images/${fileName}`] = url;
+  imageUrls[`assets/recipe-images/${fileName}`] = url;
+  imageUrls[`./assets/recipe-images/${fileName}`] = url;
+
+  return imageUrls;
+}, {});
+
 // Number of World Cup titles won by country
 const worldCupTitles = {
   "Brazil": 5,
@@ -40,7 +57,7 @@ function getFlagUrlByIso(isoCode) {
 
 let fetchedRecipesData = {};
 let countrySearchItems = [];
-const RECIPE_IMAGE_FALLBACK = "https://images.unsplash.com/photo-1495195134817-a165d429281b?w=800&auto=format&fit=crop";
+const RECIPE_IMAGE_FALLBACK = localRecipeImageUrls['fallback-recipe.webp'] || "";
 const initialGlobeLat = 8;
 const originalGlobeLng = -51.925;
 const initialGlobeRotationOffset = -10;
@@ -231,6 +248,21 @@ function getOptimizedRecipeImageUrl(imageUrl) {
   ));
 }
 
+function getLocalRecipeImageUrl(imageUrl) {
+  const normalizedPath = imageUrl
+    .replace(/^\.?\//, '')
+    .replace(/^assets\//, '');
+
+  return localRecipeImageUrls[normalizedPath] || localRecipeImageUrls[normalizedPath.split('/').pop()] || "";
+}
+
+function resolveRecipeImageUrl(imageUrl) {
+  const trimmedUrl = imageUrl ? imageUrl.trim() : "";
+  if (!trimmedUrl) return "";
+
+  return getLocalRecipeImageUrl(trimmedUrl) || getOptimizedRecipeImageUrl(trimmedUrl);
+}
+
 function findCountryFeature(countryLookup, countryName) {
   const normalizedName = normalizeLookupText(countryName);
   const directMatch = countryLookup.get(normalizedName);
@@ -295,7 +327,7 @@ function buildRecipesFromCsv(csvText, features) {
     const recipe = {
       dish: dishName.trim(),
       description: description ? description.trim() : "",
-      image: getOptimizedRecipeImageUrl(image) || RECIPE_IMAGE_FALLBACK,
+      image: resolveRecipeImageUrl(image) || RECIPE_IMAGE_FALLBACK,
       link: link && link.trim() !== "" ? link.trim() : "https://receitas.globo.com/"
     };
     const feature = findCountryFeature(countryLookup, countryPt);
